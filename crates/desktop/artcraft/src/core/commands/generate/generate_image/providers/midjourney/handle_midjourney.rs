@@ -24,7 +24,7 @@ use enums::tauri::tasks::task_type::TaskType;
 
 pub async fn handle_midjourney(request: &TauriGenerateImageRequest, config: &AppEnvConfigs, credentials: &MidjourneyCredentialManager, storyteller: &StorytellerCredentialManager) -> Result<TaskEnqueueSuccess, GenerateError> {
   let model = request.model.ok_or_else(GenerateError::no_model_specified)?;
-  if !matches!(model, TauriImageModel::Midjourney | TauriImageModel::Midjourney7 | TauriImageModel::Midjourney7Niji | TauriImageModel::Midjourney8) {
+  if !matches!(model, TauriImageModel::Midjourney7 | TauriImageModel::Midjourney7Niji | TauriImageModel::Midjourney8) {
     return Err(bad_input("This model cannot use a Midjourney account"));
   }
   if has_image_inputs(request) {

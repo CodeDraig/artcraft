@@ -21,9 +21,6 @@ slug: models-supported
 - GPT Image 1.5
 - Seedream 4
 - Seedream 4.5
-- Flux Pro Kontext Max (editing)
-- Flux Pro Inpaint (editing)
-- Flux Dev Juggernaut Inpaint (editing)
 
 ## Video models
 
@@ -35,8 +32,6 @@ slug: models-supported
 - Kling 2.6 Pro
 - Seedance 1.0 Lite
 - Seedance 2.0
-- Sora 2
-- Sora 2 Pro
 - Google Veo 2
 - Google Veo 3
 - Google Veo 3 Fast

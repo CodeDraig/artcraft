@@ -48,7 +48,6 @@ pub enum InferenceModelType {
   #[serde(rename = "seed_vc")]
   SeedVc,
 
-  /// NB: This is for Sora GPT 4o image gen
   #[serde(rename = "image_gen_api")]
   ImageGenApi,
 
@@ -85,16 +84,10 @@ pub enum InferenceModelType {
   Flux1Dev,
   #[serde(rename = "flux_1_schnell")]
   Flux1Schnell,
-  #[serde(rename = "flux_dev_juggernaut")]
-  FluxDevJuggernaut,
-  #[serde(rename = "flux_pro_1")]
-  FluxPro1,
   #[serde(rename = "flux_pro_1p1")]
   FluxPro11,
   #[serde(rename = "flux_pro_1p1_ultra")]
   FluxPro11Ultra,
-  #[serde(rename = "flux_pro_kontext_max")]
-  FluxProKontextMax,
   #[serde(rename = "flux_2_lora_angles")]
   Flux2LoraAngles,
   #[serde(rename = "gpt_image_1")]
@@ -240,10 +233,6 @@ pub enum InferenceModelType {
   Seedance2p5,
   #[serde(rename = "seedance_2p5_u")]
   Seedance2p5Ultra,
-  #[serde(rename = "sora_2")]
-  Sora2,
-  #[serde(rename = "sora_2_pro")]
-  Sora2Pro,
   #[serde(rename = "veo_2")]
   Veo2,
   #[serde(rename = "veo_3")]
@@ -347,11 +336,8 @@ impl InferenceModelType {
       // Image models (mirror of CommonModelType)
       Self::Flux1Dev => "flux_1_dev",
       Self::Flux1Schnell => "flux_1_schnell",
-      Self::FluxDevJuggernaut => "flux_dev_juggernaut",
-      Self::FluxPro1 => "flux_pro_1",
       Self::FluxPro11 => "flux_pro_1p1",
       Self::FluxPro11Ultra => "flux_pro_1p1_ultra",
-      Self::FluxProKontextMax => "flux_pro_kontext_max",
       Self::Flux2LoraAngles => "flux_2_lora_angles",
       Self::GptImage1 => "gpt_image_1",
       Self::GptImage1p5 => "gpt_image_1p5",
@@ -422,8 +408,6 @@ impl InferenceModelType {
       Self::Seedance2p5Preview => "seedance_2p5_preview",
       Self::Seedance2p5 => "seedance_2p5",
       Self::Seedance2p5Ultra => "seedance_2p5_u",
-      Self::Sora2 => "sora_2",
-      Self::Sora2Pro => "sora_2_pro",
       Self::Veo2 => "veo_2",
       Self::Veo3 => "veo_3",
       Self::Veo3Fast => "veo_3_fast",
@@ -489,11 +473,8 @@ impl InferenceModelType {
       // Image models (mirror of CommonModelType)
       "flux_1_dev" => Ok(Self::Flux1Dev),
       "flux_1_schnell" => Ok(Self::Flux1Schnell),
-      "flux_dev_juggernaut" => Ok(Self::FluxDevJuggernaut),
-      "flux_pro_1" => Ok(Self::FluxPro1),
       "flux_pro_1p1" => Ok(Self::FluxPro11),
       "flux_pro_1p1_ultra" => Ok(Self::FluxPro11Ultra),
-      "flux_pro_kontext_max" => Ok(Self::FluxProKontextMax),
       "flux_2_lora_angles" => Ok(Self::Flux2LoraAngles),
       "gpt_image_1" => Ok(Self::GptImage1),
       "gpt_image_1p5" => Ok(Self::GptImage1p5),
@@ -564,8 +545,6 @@ impl InferenceModelType {
       "seedance_2p5_preview" => Ok(Self::Seedance2p5Preview),
       "seedance_2p5" => Ok(Self::Seedance2p5),
       "seedance_2p5_u" => Ok(Self::Seedance2p5Ultra),
-      "sora_2" => Ok(Self::Sora2),
-      "sora_2_pro" => Ok(Self::Sora2Pro),
       "veo_2" => Ok(Self::Veo2),
       "veo_3" => Ok(Self::Veo3),
       "veo_3_fast" => Ok(Self::Veo3Fast),
@@ -635,11 +614,8 @@ impl InferenceModelType {
       // Image models (mirror of CommonModelType)
       Self::Flux1Dev,
       Self::Flux1Schnell,
-      Self::FluxDevJuggernaut,
-      Self::FluxPro1,
       Self::FluxPro11,
       Self::FluxPro11Ultra,
-      Self::FluxProKontextMax,
       Self::Flux2LoraAngles,
       Self::GptImage1,
       Self::GptImage1p5,
@@ -710,8 +686,6 @@ impl InferenceModelType {
       Self::Seedance2p5Preview,
       Self::Seedance2p5,
       Self::Seedance2p5Ultra,
-      Self::Sora2,
-      Self::Sora2Pro,
       Self::Veo2,
       Self::Veo3,
       Self::Veo3Fast,
@@ -764,11 +738,8 @@ impl InferenceModelType {
       // Image models
       CommonModelType::Flux1Dev => Self::Flux1Dev,
       CommonModelType::Flux1Schnell => Self::Flux1Schnell,
-      CommonModelType::FluxDevJuggernaut => Self::FluxDevJuggernaut,
-      CommonModelType::FluxPro1 => Self::FluxPro1,
       CommonModelType::FluxPro11 => Self::FluxPro11,
       CommonModelType::FluxPro11Ultra => Self::FluxPro11Ultra,
-      CommonModelType::FluxProKontextMax => Self::FluxProKontextMax,
       CommonModelType::Flux2LoraAngles => Self::Flux2LoraAngles,
       CommonModelType::GptImage1 => Self::GptImage1,
       CommonModelType::GptImage1p5 => Self::GptImage1p5,
@@ -839,8 +810,6 @@ impl InferenceModelType {
       CommonModelType::Seedance2p5Preview => Self::Seedance2p5Preview,
       CommonModelType::Seedance2p5 => Self::Seedance2p5,
       CommonModelType::Seedance2p5Ultra => Self::Seedance2p5Ultra,
-      CommonModelType::Sora2 => Self::Sora2,
-      CommonModelType::Sora2Pro => Self::Sora2Pro,
       CommonModelType::Veo2 => Self::Veo2,
       CommonModelType::Veo3 => Self::Veo3,
       CommonModelType::Veo3Fast => Self::Veo3Fast,
@@ -916,11 +885,8 @@ mod tests {
       // Image models (mirror of CommonModelType)
       assert_serialization(InferenceModelType::Flux1Dev, "flux_1_dev");
       assert_serialization(InferenceModelType::Flux1Schnell, "flux_1_schnell");
-      assert_serialization(InferenceModelType::FluxDevJuggernaut, "flux_dev_juggernaut");
-      assert_serialization(InferenceModelType::FluxPro1, "flux_pro_1");
       assert_serialization(InferenceModelType::FluxPro11, "flux_pro_1p1");
       assert_serialization(InferenceModelType::FluxPro11Ultra, "flux_pro_1p1_ultra");
-      assert_serialization(InferenceModelType::FluxProKontextMax, "flux_pro_kontext_max");
       assert_serialization(InferenceModelType::Flux2LoraAngles, "flux_2_lora_angles");
       assert_serialization(InferenceModelType::GptImage1, "gpt_image_1");
       assert_serialization(InferenceModelType::GptImage1p5, "gpt_image_1p5");
@@ -990,8 +956,6 @@ mod tests {
       assert_serialization(InferenceModelType::Seedance2p5Preview, "seedance_2p5_preview");
       assert_serialization(InferenceModelType::Seedance2p5, "seedance_2p5");
       assert_serialization(InferenceModelType::Seedance2p5Ultra, "seedance_2p5_u");
-      assert_serialization(InferenceModelType::Sora2, "sora_2");
-      assert_serialization(InferenceModelType::Sora2Pro, "sora_2_pro");
       assert_serialization(InferenceModelType::Veo2, "veo_2");
       assert_serialization(InferenceModelType::Veo3, "veo_3");
       assert_serialization(InferenceModelType::Veo3Fast, "veo_3_fast");
@@ -1054,11 +1018,8 @@ mod tests {
       // Image models (mirror of CommonModelType)
       assert_eq!(InferenceModelType::Flux1Dev.to_str(), "flux_1_dev");
       assert_eq!(InferenceModelType::Flux1Schnell.to_str(), "flux_1_schnell");
-      assert_eq!(InferenceModelType::FluxDevJuggernaut.to_str(), "flux_dev_juggernaut");
-      assert_eq!(InferenceModelType::FluxPro1.to_str(), "flux_pro_1");
       assert_eq!(InferenceModelType::FluxPro11.to_str(), "flux_pro_1p1");
       assert_eq!(InferenceModelType::FluxPro11Ultra.to_str(), "flux_pro_1p1_ultra");
-      assert_eq!(InferenceModelType::FluxProKontextMax.to_str(), "flux_pro_kontext_max");
       assert_eq!(InferenceModelType::Flux2LoraAngles.to_str(), "flux_2_lora_angles");
       assert_eq!(InferenceModelType::GptImage1.to_str(), "gpt_image_1");
       assert_eq!(InferenceModelType::GptImage1p5.to_str(), "gpt_image_1p5");
@@ -1128,8 +1089,6 @@ mod tests {
       assert_eq!(InferenceModelType::Seedance2p5Preview.to_str(), "seedance_2p5_preview");
       assert_eq!(InferenceModelType::Seedance2p5.to_str(), "seedance_2p5");
       assert_eq!(InferenceModelType::Seedance2p5Ultra.to_str(), "seedance_2p5_u");
-      assert_eq!(InferenceModelType::Sora2.to_str(), "sora_2");
-      assert_eq!(InferenceModelType::Sora2Pro.to_str(), "sora_2_pro");
       assert_eq!(InferenceModelType::Veo2.to_str(), "veo_2");
       assert_eq!(InferenceModelType::Veo3.to_str(), "veo_3");
       assert_eq!(InferenceModelType::Veo3Fast.to_str(), "veo_3_fast");
@@ -1194,11 +1153,8 @@ mod tests {
       // Image models (mirror of CommonModelType)
       assert_eq!(InferenceModelType::from_str("flux_1_dev").unwrap(), InferenceModelType::Flux1Dev);
       assert_eq!(InferenceModelType::from_str("flux_1_schnell").unwrap(), InferenceModelType::Flux1Schnell);
-      assert_eq!(InferenceModelType::from_str("flux_dev_juggernaut").unwrap(), InferenceModelType::FluxDevJuggernaut);
-      assert_eq!(InferenceModelType::from_str("flux_pro_1").unwrap(), InferenceModelType::FluxPro1);
       assert_eq!(InferenceModelType::from_str("flux_pro_1p1").unwrap(), InferenceModelType::FluxPro11);
       assert_eq!(InferenceModelType::from_str("flux_pro_1p1_ultra").unwrap(), InferenceModelType::FluxPro11Ultra);
-      assert_eq!(InferenceModelType::from_str("flux_pro_kontext_max").unwrap(), InferenceModelType::FluxProKontextMax);
       assert_eq!(InferenceModelType::from_str("flux_2_lora_angles").unwrap(), InferenceModelType::Flux2LoraAngles);
       assert_eq!(InferenceModelType::from_str("gpt_image_1").unwrap(), InferenceModelType::GptImage1);
       assert_eq!(InferenceModelType::from_str("gpt_image_1p5").unwrap(), InferenceModelType::GptImage1p5);
@@ -1268,8 +1224,6 @@ mod tests {
       assert_eq!(InferenceModelType::from_str("seedance_2p5_preview").unwrap(), InferenceModelType::Seedance2p5Preview);
       assert_eq!(InferenceModelType::from_str("seedance_2p5").unwrap(), InferenceModelType::Seedance2p5);
       assert_eq!(InferenceModelType::from_str("seedance_2p5_u").unwrap(), InferenceModelType::Seedance2p5Ultra);
-      assert_eq!(InferenceModelType::from_str("sora_2").unwrap(), InferenceModelType::Sora2);
-      assert_eq!(InferenceModelType::from_str("sora_2_pro").unwrap(), InferenceModelType::Sora2Pro);
       assert_eq!(InferenceModelType::from_str("veo_2").unwrap(), InferenceModelType::Veo2);
       assert_eq!(InferenceModelType::from_str("veo_3").unwrap(), InferenceModelType::Veo3);
       assert_eq!(InferenceModelType::from_str("veo_3_fast").unwrap(), InferenceModelType::Veo3Fast);
@@ -1370,10 +1324,6 @@ mod tests {
       assert_eq!(
         InferenceModelType::from_common_model_type(CommonModelType::Flux1Dev),
         InferenceModelType::Flux1Dev,
-      );
-      assert_eq!(
-        InferenceModelType::from_common_model_type(CommonModelType::Sora2Pro),
-        InferenceModelType::Sora2Pro,
       );
       assert_eq!(
         InferenceModelType::from_common_model_type(CommonModelType::Marble0p1Plus),

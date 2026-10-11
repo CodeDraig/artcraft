@@ -1,7 +1,7 @@
 import type { FolderInfo } from "@storyteller/api";
 import { getThumbnailUrl, THUMBNAIL_SIZES } from "@storyteller/common";
 import type { GalleryFolder } from "./GalleryDraggableItem";
-import type { GalleryItem } from "./gallery-modal";
+import type { GalleryItem } from "./GalleryItem";
 import { resolveFolderThumb } from "./folderUtils";
 
 /**

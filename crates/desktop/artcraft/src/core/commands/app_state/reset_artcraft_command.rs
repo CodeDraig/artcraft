@@ -1,4 +1,3 @@
-use crate::core::commands::deprecated::image_edit::enqueue_edit_image_command::EnqueueEditImageSuccessResponse;
 use crate::core::commands::response::shorthand::ResponseOrErrorMessage;
 use crate::core::commands::response::success_response_wrapper::SerializeMarker;
 use crate::core::state::app_preferences::app_preferences_manager::AppPreferencesManager;

@@ -27,7 +27,7 @@ pub enum Modality {
 
 impl OmniRequest {
   pub fn uses_artcraft(&self) -> bool {
-    // Native Grok is deliberately disabled, including calls from old UI state.
+    // Grok generation is routed through Artcraft.
     self.model().is_some_and(|model| model.starts_with("grok_")) || matches!(self.provider, None | Some(GenerationProvider::Artcraft | GenerationProvider::Grok))
   }
 
@@ -35,22 +35,12 @@ impl OmniRequest {
     self.fields.get("model").and_then(Value::as_str)
   }
 
-  pub fn uses_legacy_image_endpoint(&self) -> bool {
-    // These desktop editor integrations still have dedicated request shapes.
-    // Catalog models, including any future ID, use Omni by default.
-    matches!(self.model(), Some("recraft_3" | "flux_pro_kontext_max" | "flux_dev_juggernaut" | "flux_pro_1"))
-  }
-
   pub fn api_fields(&self, modality: Modality) -> Map<String, Value> {
     let mut fields = self.fields.clone();
-    if let Some(model) = self.model() {
-      fields.insert("model".into(), Value::String(canonical_model_id(model).into()));
-    }
     match modality {
       Modality::Image => rename_field(&mut fields, "batch_size", "image_batch_count"),
       Modality::Video => {
         rename_field(&mut fields, "image_media_token", "start_frame_image_media_token");
-        fields.remove("sora_orientation");
         fields.remove("grok_aspect_ratio");
       },
       Modality::Splat => rename_field(&mut fields, "image_media_tokens", "reference_image_media_tokens"),
@@ -97,27 +87,6 @@ fn rename_field(fields: &mut Map<String, Value>, old: &str, new: &str) {
   }
 }
 
-// Compatibility for persisted desktop settings and existing editor callers.
-// Unknown IDs pass through unchanged; this is not a model allowlist.
-fn canonical_model_id(model: &str) -> &str {
-  match model {
-    "midjourney" => "midjourney_8",
-    "flux_pro_11" => "flux_pro_1p1",
-    "flux_pro_11_ultra" => "flux_pro_1p1_ultra",
-    "gemini_25_flash" => "nano_banana",
-    "grok_image" => "grok_imagine_image",
-    "grok_video" => "grok_imagine_video",
-    "kling_1.6_pro" => "kling_1p6_pro",
-    "kling_2.1_pro" => "kling_2p1_pro",
-    "kling_2.1_master" => "kling_2p1_master",
-    "seedance_1.0_lite" => "seedance_1p0_lite",
-    "hunyuan_3d_2" | "hunyuan_3d_2_0" => "hunyuan_3d_2p0",
-    "hunyuan_3d_2_1" => "hunyuan_3d_2p1",
-    "world_labs_marble" | "worldlabs_marble" => "marble_0p1_plus",
-    _ => model,
-  }
-}
-
 #[cfg(test)]
 mod tests {
   use super::*;
@@ -130,7 +99,6 @@ mod tests {
         let source = json!({"model": model, "quality": quality, "resolution": "four_k"});
         let request: OmniRequest = serde_json::from_value(source.clone()).unwrap();
         assert!(request.uses_artcraft());
-        assert!(!request.uses_legacy_image_endpoint());
         assert_eq!(Value::Object(request.api_fields(Modality::Image)), source);
       }
     }
@@ -172,7 +140,7 @@ mod tests {
   #[test]
   fn grok_uses_artcraft_even_with_a_saved_native_provider() {
     let request: OmniRequest = serde_json::from_value(json!({
-      "model": "grok_video", "provider": "grok"
+      "model": "grok_imagine_video", "provider": "grok"
     }))
     .unwrap();
     assert!(request.uses_artcraft());
@@ -180,9 +148,9 @@ mod tests {
   }
 
   #[test]
-  fn legacy_mesh_and_splat_inputs_use_omni_field_names() {
+  fn native_mesh_and_splat_inputs_use_omni_field_names() {
     let mesh: OmniRequest = serde_json::from_value(json!({
-      "model": "hunyuan_3d_2_0", "image_media_token": "mf_mesh_input"
+      "model": "hunyuan_3d_2p0", "image_media_token": "mf_mesh_input"
     }))
     .unwrap();
     let fields = mesh.api_fields(Modality::Mesh);
@@ -191,7 +159,7 @@ mod tests {
     assert!(!fields.contains_key("image_media_token"));
 
     let splat: OmniRequest = serde_json::from_value(json!({
-      "model": "world_labs_marble", "image_media_tokens": ["mf_splat_input"]
+      "model": "marble_0p1_plus", "image_media_tokens": ["mf_splat_input"]
     }))
     .unwrap();
     let fields = splat.api_fields(Modality::Splat);
@@ -207,7 +175,7 @@ mod tests {
     let stored = TaskModelType::from_str("future_model_v99").unwrap();
     let event = GenerationModel::Unknown(stored.to_str().to_owned());
     assert_eq!(serde_json::to_value(event).unwrap(), json!("future_model_v99"));
-    // Keep existing event strings compatible with old history.
+    // Persisted event identity remains distinct from the API model ID.
     assert_eq!(serde_json::to_value(GenerationModel::FluxPro11).unwrap(), json!("flux_pro_1.1"));
   }
 }
@@ -223,16 +191,9 @@ mod midjourney_tests {
       assert!(!direct.uses_artcraft());
       let artcraft: OmniRequest = serde_json::from_value(serde_json::json!({"model": model, "provider": "artcraft"})).unwrap();
       assert!(artcraft.uses_artcraft());
-      assert!(!artcraft.uses_legacy_image_endpoint());
       assert_eq!(artcraft.api_fields(Modality::Image)["model"], model);
     }
   }
 
-  #[test]
-  fn generic_midjourney_uses_v8_when_artcraft_is_selected() {
-    let request: OmniRequest = serde_json::from_value(serde_json::json!({"model": "midjourney", "provider": "artcraft"})).unwrap();
-    assert!(request.uses_artcraft());
-    assert!(!request.uses_legacy_image_endpoint());
-    assert_eq!(request.api_fields(Modality::Image)["model"], "midjourney_8");
-  }
+
 }

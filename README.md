@@ -63,7 +63,6 @@ More previews are coming for image inpainting and image ingredients.
 | **ArtCraft** | Images, video, music and sound, 3D meshes, and worlds. Browse the complete model catalog below. |
 | Grok         | Grok Imagine and Grok Video.                                                                    |
 | Midjourney   | Midjourney image generation.                                                                    |
-| Sora         | Sora 1, Sora 2, and GPT Image 1.                                                                |
 | World Labs   | Marble world generation with Gaussian splats.                                                   |
 
 <details>
@@ -92,7 +91,6 @@ More previews are coming for image inpainting and image ingredients.
 | Seedance | Seedance 1.0 Lite †; Seedance 1.5 Pro; Seedance 2.0                                                                           |
 | Kling    | Kling 1.6 Pro; Kling 2.1 Pro †; Kling 2.1 Master †; Kling 2.5 Turbo Pro; Kling 2.6 Pro; Kling 3.0 Pro †; Kling 3.0 Standard † |
 | Veo      | Veo 2 †; Veo 3 †; Veo 3 Fast; Veo 3.1; Veo 3.1 Fast; Veo 3.1 Lite                                                             |
-| Sora     | Sora 2 †; Sora 2 Pro †                                                                                                        |
 | Vidu     | Vidu Q3; Vidu Q3 Turbo                                                                                                        |
 | MiniMax  | MiniMax H3; MiniMax H3 Turbo ‡; MiniMax H3 Ultra ‡                                                                            |
 | Flux     | Flux 3; Flux 3 Draft                                                                                                          |

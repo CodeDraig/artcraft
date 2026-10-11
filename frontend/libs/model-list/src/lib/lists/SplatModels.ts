@@ -2,7 +2,6 @@ import { SplatModel } from "../classes/SplatModel.js";
 import { ModelCreator } from "../classes/metadata/ModelCreator.js";
 import { GenerationProvider } from "@storyteller/api-enums";
 
-// TODO: Some of the model configs, such as generation counts, are authoritatively controlled in `legacy/Models.ts`
 
 export const SPLAT_MODELS : SplatModel [] = [
   new SplatModel({

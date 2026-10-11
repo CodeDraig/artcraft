@@ -1,5 +1,5 @@
 use crate::core::commands::generate::omni::{self, Modality, OmniRequest, OmniResult};
-use crate::core::commands::generate::omni::dispatch::{adapt_legacy_response, decode_native};
+use crate::core::commands::generate::omni::native::{serialize_native_response, decode_native};
 use tauri::Manager;
 use crate::core::commands::enqueue::common::notify_frontend_of_errors::notify_frontend_of_errors;
 use crate::core::commands::enqueue::generate_error::{BadInputReason, GenerateError, MissingCredentialsReason};
@@ -10,7 +10,6 @@ use crate::core::commands::generate::generate_video::request::{
   TauriGenerateVideoErrorType, TauriGenerateVideoRequest, TauriGenerateVideoResponse,
   TauriVideoModel,
 };
-use crate::core::commands::generate::generate_video::sora2::handle_sora_sora2::handle_sora_sora2;
 use crate::core::commands::response::failure_response_wrapper::{CommandErrorResponseWrapper, CommandErrorStatus};
 use crate::core::commands::response::shorthand::Response;
 use crate::core::events::basic_sendable_event_trait::BasicSendableEvent;
@@ -23,8 +22,6 @@ use crate::core::state::data_dir::app_data_root::AppDataRoot;
 use crate::core::state::provider_priority::{Provider, ProviderPriorityStore};
 use crate::core::state::task_database::TaskDatabase;
 use crate::services::grok::state::grok_credential_manager::GrokCredentialManager;
-use crate::services::sora::state::sora_credential_manager::SoraCredentialManager;
-use crate::services::sora::state::sora_task_queue::SoraTaskQueue;
 use crate::services::storyteller::state::storyteller_credential_manager::StorytellerCredentialManager;
 use enums::common::generation_provider::GenerationProvider;
 use log::{error, info, warn};
@@ -35,9 +32,9 @@ pub async fn generate_video_command(request: OmniRequest, app: AppHandle) -> Omn
   if request.uses_artcraft() {
     return omni::generate(request, Modality::Video, &app).await;
   }
-  adapt_legacy_response(generate_video_native(
+  serialize_native_response(generate_video_native(
     decode_native(request)?, app.clone(),
-    app.state(), app.state(), app.state(), app.state(), app.state(), app.state(), app.state(), app.state(), app.state(),
+    app.state(), app.state(), app.state(), app.state(), app.state(), app.state(), app.state(),
   ).await)
 }
 
@@ -51,8 +48,6 @@ async fn generate_video_native(
   task_database: State<'_, TaskDatabase>,
   grok_creds_manager: State<'_, GrokCredentialManager>,
   storyteller_creds_manager: State<'_, StorytellerCredentialManager>,
-  sora_task_queue: State<'_, SoraTaskQueue>,
-  sora_creds_manager: State<'_, SoraCredentialManager>,
 ) -> Response<TauriGenerateVideoResponse, TauriGenerateVideoErrorType, ()> {
 
   info!("generate_video_command called, request: {:?}", request);
@@ -78,7 +73,6 @@ async fn generate_video_native(
     &provider_priority_store,
     &task_database,
     &grok_creds_manager,
-    &sora_creds_manager,
     &storyteller_creds_manager,
   ).await;
 
@@ -150,7 +144,6 @@ async fn handle_request(
   provider_priority_store: &ProviderPriorityStore,
   task_database: &TaskDatabase,
   grok_creds_manager: &GrokCredentialManager,
-  sora_creds_manager: &SoraCredentialManager,
   storyteller_creds_manager: &StorytellerCredentialManager,
 ) -> Result<TaskEnqueueSuccess, GenerateError> {
 
@@ -182,15 +175,7 @@ async fn handle_request(
         grok_creds_manager,
       ).await
     }
-    GenerationProvider::Sora => {
-      handle_sora_sora2(
-        &request,
-        app,
-        app_data_root,
-        app_env_configs,
-        sora_creds_manager,
-      ).await
-    }
+
     _ => {
       handle_video_artcraft(
         &request,

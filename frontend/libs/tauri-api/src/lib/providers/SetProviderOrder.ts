@@ -1,9 +1,9 @@
 import { invoke } from "@tauri-apps/api/core";
 import { CommandResult } from "../common/CommandStatus";
-import { Provider } from "./Provider";
+import { GenerationProvider } from "@storyteller/api-enums";
 
 export interface SetProviderOrderRequest {
-  providers: Provider[];
+  providers: GenerationProvider[];
 }
 
 export const SetProviderOrder = async (request: SetProviderOrderRequest) : Promise<CommandResult> => {

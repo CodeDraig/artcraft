@@ -119,7 +119,6 @@ function resolveSelectedProvider(
   // Retired direct accounts must not reach generation or pricing requests,
   // including when an older selection is still in state.
   if (
-    provider === GenerationProvider.Sora ||
     provider === GenerationProvider.WorldLabs
   ) {
     return GenerationProvider.Artcraft;

@@ -23,7 +23,6 @@ pub struct NonArtcraftTaskList {
 pub async fn list_non_artcraft_pending_tasks(
   args: ListNonArtcraftPendingTasksArgs<'_>,
 ) -> Result<NonArtcraftTaskList, SqliteTasksError> {
-  let artcraft_provider = GenerationProvider::Artcraft.to_string();
 
   let mut query_builder: QueryBuilder<Sqlite> = QueryBuilder::new(r#"
     SELECT
@@ -40,10 +39,18 @@ pub async fn list_non_artcraft_pending_tasks(
       frontend_subscriber_id,
       frontend_subscriber_payload
     FROM tasks
-    WHERE provider !=
+    WHERE provider IN (
   "#);
 
-  query_builder.push_bind(artcraft_provider);
+  // Poll only providers this build can execute. Historical rows remain intact
+  // and visible in task history even after their integration is removed.
+  let mut providers = query_builder.separated(", ");
+  for provider in GenerationProvider::all_variants() {
+    if provider != GenerationProvider::Artcraft {
+      providers.push_bind(provider.to_str());
+    }
+  }
+  providers.push_unseparated(") ");
 
   if !args.task_statuses.is_empty() {
     query_builder.push(" AND task_status IN (");

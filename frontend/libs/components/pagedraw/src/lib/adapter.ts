@@ -14,7 +14,7 @@ export interface PageDrawEditRequest {
   imageCount?: number;
   /** "auto" | "wide" | "tall" | "square" */
   aspectRatio?: string;
-  /** "1k" | "2k" | "4k" */
+  /** API resolution value ("one_k", "two_k", or "four_k"). */
   imageResolution?: string;
   frontendCaller?: string;
   frontendSubscriberId?: string;

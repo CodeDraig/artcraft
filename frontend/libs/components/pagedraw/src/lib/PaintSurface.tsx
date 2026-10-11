@@ -1,3 +1,4 @@
+import { useNodeEntranceFade } from "./hooks/useNodeEntranceFade";
 import React, {
   useState,
   useEffect,
@@ -20,8 +21,6 @@ import Konva from "konva";
 import { LineNode, SceneState, useSceneStore } from "./stores/SceneState";
 import { Node } from "./Node";
 import "./pagedraw.css";
-import SplitPane from "./components/ui/SplitPane";
-import { useRightPanelLayoutManagement } from "./hooks/useRightPanelLayoutManagement";
 import { useStageCentering } from "./hooks/useCenteredStage";
 import { useGlobalMouseUp } from "./hooks/useGlobalMouseUp";
 import { loadImageFromUrl } from "./utilities/imageHelpers";
@@ -32,7 +31,6 @@ export type MiraiProps = {
   drawNodes: (Node | LineNode)[];
   inpaintLineNodes: LineNode[];
   selectedNodeIds: string[];
-  onCanvasSizeChange?: (width: number, height: number) => void;
   fillColor?: string;
   activeTool?:
     | "select"
@@ -51,7 +49,7 @@ export type MiraiProps = {
   transformerRefs: React.RefObject<{ [key: string]: Konva.Transformer }>;
   baseImageRef: React.RefObject<Konva.Image>;
   showMaskLayer: boolean;
-  /** Forwarded to SplitPane so the backdrop fills the parent (no 56px top-bar reserve). */
+  /** Fill the parent without reserving space for the host top bar. */
   fillParentHeight?: boolean;
 };
 
@@ -65,7 +63,6 @@ export const PaintSurface = ({
   drawNodes,
   inpaintLineNodes,
   selectedNodeIds,
-  onCanvasSizeChange,
   fillColor,
   activeTool = "select",
   brushColor = "#000000",
@@ -80,7 +77,6 @@ export const PaintSurface = ({
   showMaskLayer = false,
   fillParentHeight = false,
 }: MiraiProps) => {
-  const singlePaneMode = true;
 
   /*
    * Subscribe only to the slice PaintSurface needs. We do NOT subscribe to nodes/lineNodes
@@ -125,12 +121,7 @@ export const PaintSurface = ({
   } = useSceneStore(useShallow(selector));
 
   const mouseMoveThrottle = React.useRef(-1);
-  const imageRef = React.useRef<Konva.Image>(null);
   const leftPanelRef = React.useRef<Konva.Layer>(null);
-  // Tracks which draw-node ids we've already shown, so only freshly added
-  // images/shapes get the entrance fade — not the whole canvas on scene restore.
-  const seenNodeIdsRef = React.useRef<Set<string> | null>(null);
-  const rightContainerRef = React.useRef<HTMLDivElement>(null);
   const cursorLayerRef = React.useRef<Konva.Layer>(null);
   const cursorShapeRef = React.useRef<Konva.Circle>(null);
   const cursorPositionRef = React.useRef<{ x: number; y: number } | null>(null);
@@ -154,10 +145,7 @@ export const PaintSurface = ({
 
   const leftPanelWidth = 1024;
   const leftPanelHeight = 1024;
-  const rightPanelWidth = 1024;
-  const rightPanelHeight = 1024;
 
-  const [leftPct, setLeftPct] = useState(singlePaneMode ? 100 : 50);
   const [isDrawing, setIsDrawing] = useState(false);
 
   const selectionRectRef = React.useRef<Konva.Rect>(null);
@@ -233,29 +221,17 @@ export const PaintSurface = ({
     return () => {
       resizeObserver.disconnect();
     };
-  }, [leftPct]);
+  }, []);
 
   const stagePosition = useStageCentering(
     stageRef,
-    leftPct,
+    100,
     leftPanelWidth,
     leftPanelHeight,
   );
 
-  const NATURAL_WIDTH = rightPanelWidth;
-  const NATURAL_HEIGHT = rightPanelHeight;
 
   const multiSelectTransformerRef = React.useRef<Konva.Transformer>(null);
-
-  // useStageSnapshot(stageRef, imageRef, isSelectingRef, transformerRefs);
-
-  const previewScale = useRightPanelLayoutManagement(
-    rightContainerRef,
-    NATURAL_WIDTH,
-    NATURAL_HEIGHT,
-    leftPct,
-    onCanvasSizeChange,
-  );
 
   const flushCurrentLineToStore = useCallback(() => {
     const pending = currentLinePendingRef.current;
@@ -1459,45 +1435,7 @@ export const PaintSurface = ({
     [activeTool, drawNodes, inpaintLineNodes, selectedNodeIds, transformerRefs],
   );
 
-  // Entrance fade for newly added images/shapes. Opacity is the only safe
-  // channel here: x/y/scale are controlled props that react-konva would reset
-  // on the next render, but opacity is left untouched, so an imperative tween
-  // survives re-renders. Strokes ("line") are skipped — a drawn line shouldn't
-  // fade in. The first pass just records existing ids so a restored scene
-  // doesn't replay the entrance for every object at once.
-  useLayoutEffect(() => {
-    const stage = stageRef.current;
-    if (!stage) return;
-
-    const currentIds = new Set(drawNodes.map((n) => n.id));
-
-    if (seenNodeIdsRef.current === null) {
-      seenNodeIdsRef.current = currentIds;
-      return;
-    }
-
-    const reduceMotion = window.matchMedia?.(
-      "(prefers-reduced-motion: reduce)",
-    ).matches;
-
-    if (!reduceMotion) {
-      const seen = seenNodeIdsRef.current;
-      for (const node of drawNodes) {
-        if (node.type === "line" || seen.has(node.id)) continue;
-        const konvaNode = stage.findOne<Konva.Node>(`#${node.id}`);
-        if (!konvaNode) continue;
-        konvaNode.opacity(0);
-        new Konva.Tween({
-          node: konvaNode,
-          opacity: 1,
-          duration: 0.26,
-          easing: Konva.Easings.EaseOut,
-        }).play();
-      }
-    }
-
-    seenNodeIdsRef.current = currentIds;
-  }, [drawNodes, stageRef]);
+  useNodeEntranceFade(drawNodes, stageRef);
 
   // Load the checkboard image for transparency background
   useEffect(() => {
@@ -1670,19 +1608,15 @@ export const PaintSurface = ({
   // inpaintLineNodes is the separate inpaint layer.
 
   return (
-    <SplitPane
-      singlePaneMode={singlePaneMode}
-      fillParentHeight={fillParentHeight}
-      initialPercent={singlePaneMode ? 100 : 50}
-      onChange={setLeftPct}
-      left={
+    <div className={`pegboard-bg relative flex ${fillParentHeight ? "h-full" : "h-[calc(100vh-56px)]"} w-full items-center justify-center overflow-hidden`}>
+      <div style={{ flexBasis: "100%" }} className="h-full min-w-0 overflow-hidden">
         <div
           ref={containerRef}
           className="flex h-full w-full items-center justify-center overflow-hidden"
         >
           <Stage
             ref={stageRef}
-            width={containerDimensions.width * (leftPct / 100)}
+            width={containerDimensions.width}
             height={containerDimensions.height}
             scaleX={1}
             scaleY={1}
@@ -2029,32 +1963,7 @@ export const PaintSurface = ({
             </Layer>
           </Stage>
         </div>
-      }
-      right={
-        <div
-          ref={rightContainerRef}
-          className="flex h-full w-full items-center justify-center overflow-hidden p-4"
-        >
-          <Stage
-            width={NATURAL_WIDTH * previewScale}
-            height={NATURAL_HEIGHT * previewScale}
-            scaleX={previewScale}
-            scaleY={previewScale}
-            x={0}
-            y={0}
-          >
-            <Layer>
-              <Image
-                ref={imageRef}
-                image={undefined}
-                fill="white"
-                listening={false}
-                zIndex={-1}
-              />
-            </Layer>
-          </Stage>
-        </div>
-      }
-    />
+      </div>
+    </div>
   );
 };

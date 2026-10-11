@@ -18,7 +18,6 @@ export const MODEL_ID_PREFIX_CREATORS: Array<[string, ModelCreator]> = [
   ["seedance", ModelCreator.Bytedance],
   ["seededit", ModelCreator.Bytedance],
   ["kling", ModelCreator.Kling],
-  ["sora", ModelCreator.OpenAi],
   ["veo", ModelCreator.Google],
   ["grok", ModelCreator.Grok],
   ["vidu", ModelCreator.Vidu],

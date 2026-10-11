@@ -127,8 +127,6 @@ mod tests {
         ("https://imagine-public.x.ai/a.png", "Grok", "https://grok.com"),
         ("https://www.midjourney.com/api/submit-jobs", "Midjourney", "https://www.midjourney.com"),
         ("https://cdn.midjourney.com/a/0_0.png", "Midjourney", "https://www.midjourney.com"),
-        ("https://sora.chatgpt.com/backend/nf/create", "Sora", "https://sora.chatgpt.com"),
-        ("https://videos.openai.com/a.mp4", "Sora", "https://sora.chatgpt.com"),
         ("https://chatgpt.com/backend-api/sentinel", "ChatGPT", "https://chatgpt.com"),
         ("https://api.worldlabs.ai/api/v1/worlds", "World Labs", "https://marble.worldlabs.ai"),
         ("https://static.kinovi.ai/a.png", "Kinovi", "https://kinovi.ai"),

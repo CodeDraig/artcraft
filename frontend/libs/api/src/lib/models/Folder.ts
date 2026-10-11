@@ -25,9 +25,6 @@ export interface MediaFileCoverImageDetails {
     cdn_url: string;
     thumbnail_template?: string | null;
   } | null;
-  /** @deprecated Points at the bucket; use `maybe_links` instead. */
-  maybe_cover_image_public_bucket_url?: string | null;
-  maybe_cover_image_public_bucket_path?: string | null;
   default_cover?: {
     image_index: number;
     color_index: number;

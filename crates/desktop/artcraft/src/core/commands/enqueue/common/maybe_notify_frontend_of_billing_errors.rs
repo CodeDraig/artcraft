@@ -32,7 +32,6 @@ fn billing_error(
     BillingProvider::Fal => GenerationProvider::Fal,
     BillingProvider::Kinovi => GenerationProvider::Artcraft, // NB: We don't support Kinovi yet.
     BillingProvider::Midjourney => GenerationProvider::Midjourney,
-    BillingProvider::Sora => GenerationProvider::Sora,
   };
   warn!("Billing issue with: {:?}", provider);
   ShowProviderBillingModalEvent::send_for_provider(provider, app);

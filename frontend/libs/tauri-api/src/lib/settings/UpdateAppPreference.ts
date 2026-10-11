@@ -17,7 +17,6 @@ export enum PreferenceName {
   EnqueueFailureSound = "enqueue_failure_sound",
   GenerationSuccessSound = "generation_success_sound",
   GenerationFailureSound = "generation_failure_sound",
-  GenerationEnqueueSound = "generation_enqueue_sound",
 }
 
 export interface UpdateAppPreferencesResult {

@@ -38,9 +38,6 @@ pub struct AppPreferencesPayload {
   /// Key pointing to file; defined in the frontend code.
   pub generation_failure_sound: Option<String>,
 
-  /// Key pointing to file; defined in the frontend code.
-  #[deprecated]
-  pub generation_enqueue_sound: Option<String>,
 }
 
 
@@ -74,6 +71,5 @@ async fn get_prefs(app_prefs: &AppPreferencesManager) -> AnyhowResult<AppPrefere
     enqueue_failure_sound: prefs.enqueue_failure_sound,
     generation_success_sound: prefs.generation_success_sound,
     generation_failure_sound: prefs.generation_failure_sound,
-    generation_enqueue_sound: prefs.generation_enqueue_sound,
   })
 }

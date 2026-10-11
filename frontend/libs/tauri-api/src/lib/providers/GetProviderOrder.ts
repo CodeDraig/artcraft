@@ -1,13 +1,13 @@
 import { invoke } from "@tauri-apps/api/core";
 import { CommandResult } from "../common/CommandStatus";
-import { Provider } from "./Provider";
+import { GenerationProvider } from "@storyteller/api-enums";
 
 export interface GetProviderOrderSuccess extends CommandResult {
   payload: GetProviderOrderPayload;
 }
 
 export interface GetProviderOrderPayload {
-  providers: Provider[];
+  providers: GenerationProvider[];
 }
 
 // Returns the Success and Error variants directly.

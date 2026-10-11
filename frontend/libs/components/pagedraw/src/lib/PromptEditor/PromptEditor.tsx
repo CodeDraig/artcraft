@@ -43,7 +43,6 @@ const PromptEditor: React.FC<PromptBox2DProps> = ({
         <PromptBox2D
           usePrompt2DStore={usePrompt2DStore}
           uploadImage={uploadImage}
-          //selectedModelInfo={selectedModelInfo}
           selectedImageModel={selectedImageModel}
           selectedProvider={selectedProvider}
           EncodeImageBitmapToBase64={EncodeImageBitmapToBase64}

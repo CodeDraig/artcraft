@@ -21,8 +21,6 @@ export { Node } from "./lib/Node";
 // Hooks (used by PageEdit)
 export { useGlobalMouseUp } from "./lib/hooks/useGlobalMouseUp";
 export { useStageCentering } from "./lib/hooks/useCenteredStage";
-export { useRightPanelLayoutManagement } from "./lib/hooks/useRightPanelLayoutManagement";
 
 // UI components (used by PageEdit)
 export { ContextMenuContainer } from "./lib/components/ui/ContextMenu";
-export { default as SplitPane } from "./lib/components/ui/SplitPane";

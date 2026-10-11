@@ -25,7 +25,7 @@ try {
   const home = async () => {
     await page.goto(url.href);
     await expect(page.getByRole("heading", { name: "What will you craft today?" })).toBeVisible({ timeout: 60000 });
-    await expect(page.getByRole("button", { name: "42 Credits" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "42", exact: true })).toBeVisible();
   };
   const account = async () => {
     await page.getByRole("button", { name: "Settings", exact: true }).click();

@@ -6,7 +6,6 @@ import { CommonAspectRatio } from "../classes/properties/CommonAspectRatio.js";
 import { CommonResolution } from "../classes/properties/CommonResolution.js";
 import { CommonQuality } from "../classes/properties/CommonQuality.js";
 
-// TODO: Some of the model configs, such as generation counts, are authoritatively controlled in `legacy/Models.ts`
 
 export const IMAGE_MODELS: ImageModel[] = [
   new ImageModel({
@@ -37,7 +36,7 @@ export const IMAGE_MODELS: ImageModel[] = [
   }),
   new ImageModel({
     id: "midjourney",
-    tauriId: "midjourney",
+    tauriId: "midjourney_8",
     fullName: "Midjourney",
     category: "image",
     creator: ModelCreator.Midjourney,
@@ -623,62 +622,6 @@ export const IMAGE_MODELS: ImageModel[] = [
       CommonAspectRatio.TallThreeByFour,
       CommonAspectRatio.TallNineBySixteen,
     ],
-  }),
-  new ImageModel({
-    id: "flux_pro_kontext_max",
-    tauriId: "flux_pro_kontext_max",
-    fullName: "Flux Pro Kontext Max",
-    category: "image",
-    creator: ModelCreator.BlackForestLabs,
-    selectorName: "Flux Pro Kontext Max",
-    selectorDescription: "Fast instructive editing",
-    selectorBadges: ["20 sec."],
-    maxGenerationCount: 4,
-    defaultGenerationCount: 4,
-    maxPromptLength: 4000,
-    canEditImages: true,
-    canTextToImage: false,
-    tags: [ModelTag.InstructiveEdit],
-    progressBarTime: 20000,
-    canChangeAspectRatio: true,
-  }),
-  new ImageModel({
-    id: "flux_pro_inpaint",
-    tauriId: "flux_pro_1",
-    fullName: "Flux Pro Inpaint",
-    category: "image",
-    creator: ModelCreator.BlackForestLabs,
-    selectorName: "Flux Pro (Inpainting)",
-    selectorDescription: "Fast inpainting",
-    selectorBadges: ["30 sec."],
-    maxGenerationCount: 1, // NB: Fal only allows one image for some reason!
-    maxPromptLength: 4000,
-    defaultGenerationCount: 1, // NB: Fal only allows one image for some reason!
-    canEditImages: true,
-    usesInpaintingMask: true,
-    editingIsInpainting: true,
-    canTextToImage: false,
-    progressBarTime: 30000,
-    canChangeAspectRatio: true,
-  }),
-  new ImageModel({
-    id: "flux_dev_juggernaut_inpaint",
-    tauriId: "flux_dev_juggernaut",
-    fullName: "Flux Dev Juggernaut Inpaint",
-    category: "image",
-    creator: ModelCreator.BlackForestLabs,
-    selectorName: "Flux Dev Juggernaut",
-    selectorDescription: "Fast inpainting, low quality",
-    selectorBadges: ["10 sec."],
-    maxGenerationCount: 4,
-    defaultGenerationCount: 4,
-    maxPromptLength: 4000,
-    canEditImages: true,
-    usesInpaintingMask: true,
-    editingIsInpainting: true,
-    canTextToImage: false,
-    progressBarTime: 10000,
-    canChangeAspectRatio: true,
   }),
 ];
 

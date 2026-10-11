@@ -1,12 +1,11 @@
 use crate::core::events::functional_events::show_provider_login_modal_event::ShowProviderLoginModalEvent;
 use crate::core::commands::generate::generate_image::providers::midjourney::handle_midjourney::handle_midjourney;
 use crate::core::commands::generate::omni::{self, Modality, OmniRequest, OmniResult};
-use crate::core::commands::generate::omni::dispatch::{adapt_legacy_response, decode_native};
+use crate::core::commands::generate::omni::native::{serialize_native_response, decode_native};
 use tauri::Manager;
 use crate::core::commands::enqueue::common::notify_frontend_of_errors::notify_frontend_of_errors;
 use crate::core::commands::enqueue::generate_error::{GenerateError, MissingCredentialsReason};
 use crate::core::commands::enqueue::task_enqueue_success::TaskEnqueueSuccess;
-use crate::core::commands::generate::generate_image::providers::artcraft::handle_artcraft;
 use crate::core::commands::generate::generate_image::providers::artcraft_router::handle_router::handle_router;
 use crate::core::commands::generate::generate_image::tauri_generate_image_request::{
   TauriGenerateImageErrorType, TauriGenerateImageRequest, TauriGenerateImageResponse,
@@ -26,10 +25,10 @@ use tauri::{AppHandle, State};
 
 #[tauri::command]
 pub async fn generate_image_command(request: OmniRequest, app: AppHandle) -> OmniResult {
-  if request.uses_artcraft() && !request.uses_legacy_image_endpoint() {
+  if request.uses_artcraft() {
     return omni::generate(request, Modality::Image, &app).await;
   }
-  adapt_legacy_response(generate_image_native(
+  serialize_native_response(generate_image_native(
     decode_native(request)?, app.clone(),
     app.state(), app.state(), app.state(), app.state(),
   ).await)
@@ -49,13 +48,6 @@ async fn generate_image_native(
   let provider = request.provider.unwrap_or(GenerationProvider::Artcraft);
 
   let result = match provider {
-    GenerationProvider::Artcraft => {
-      handle_artcraft(
-        &request,
-        &app_env_configs,
-        &storyteller_creds_manager,
-      ).await
-    }
     GenerationProvider::Midjourney => {
       handle_midjourney(&request, &app_env_configs, &app.state(), &storyteller_creds_manager).await
     }

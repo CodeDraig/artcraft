@@ -9,8 +9,6 @@ import {
 } from "./classy-model-selector-store";
 
 const RETIRED_SELECTIONS = [
-  { page: ModelPage.TextToImage, modelId: "gpt_image_1", provider: GenerationProvider.Sora },
-  { page: ModelPage.ImageToVideo, modelId: "sora_2", provider: GenerationProvider.Sora },
   { page: ModelPage.ImageTo3DWorld, modelId: "marble_0p1_plus", provider: GenerationProvider.WorldLabs },
 ];
 

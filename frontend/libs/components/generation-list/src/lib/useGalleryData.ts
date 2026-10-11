@@ -23,7 +23,6 @@ const getLabel = (item: any) => {
       return "Video Generation";
     case "audio":
       return "Audio Generation";
-    case "dimensional":
     case "mesh":
       return "3D Mesh";
     case "splat":
@@ -35,7 +34,7 @@ const getLabel = (item: any) => {
 
 // ── Hook ───────────────────────────────────────────────────────────────────
 
-// Pull a cover image / screenshot URL off a dimensional (3D) library item. The
+// Pull a cover image / screenshot URL off a 3D library item. The
 // item's own cdn_url is the .glb/.spz asset, so 3D cards render the separate
 // cover image the backend attaches instead. Mirrors the gallery-modal logic.
 function get3DCoverThumbnail(item: any): string | null {
@@ -44,7 +43,6 @@ function get3DCoverThumbnail(item: any): string | null {
   return (
     cover.maybe_links?.maybe_thumbnail_template?.replace("{WIDTH}", "512") ??
     cover.maybe_links?.cdn_url ??
-    cover.maybe_cover_image_public_bucket_url ??
     null
   );
 }
@@ -53,13 +51,8 @@ export function useGalleryData(options: {
   username: string | null;
   filterMediaClasses: FilterMediaClasses[];
   excludeUploads?: boolean;
-  // When set, dimensional (3D) items are kept only if their model belongs to
-  // this list. The library API filters by media class ("dimensional") but can't
-  // tell mesh objects from splat worlds apart, so the two 3D create pages pass
-  // their own model ids to keep each feed showing only its own product.
-  filterModelIds?: string[];
 }) {
-  const { username, filterMediaClasses, excludeUploads, filterModelIds } =
+  const { username, filterMediaClasses, excludeUploads } =
     options;
 
   const [items, setItems] = useState<GalleryItem[]>([]);
@@ -120,25 +113,11 @@ export function useGalleryData(options: {
         });
 
         if (response.success && response.data) {
-          const modelIdSet =
-            filterModelIds && filterModelIds.length
-              ? new Set(filterModelIds)
-              : null;
-
           const newItems = response.data
             .filter(
               (item: any) =>
                 item.media_type !== FilterMediaType.SCENE_JSON &&
-                !(excludeUploads && item.origin_category === "upload") &&
-                // Split 3D history by model so the object and world pages don't
-                // show each other's generations. Non-3D items and items
-                // without a known model are left untouched.
-                !(
-                  modelIdSet &&
-                  is3DMediaClass(item.media_class) &&
-                  item.maybe_model_type &&
-                  !modelIdSet.has(item.maybe_model_type)
-                ),
+                !(excludeUploads && item.origin_category === "upload"),
             )
             .map(mapApiItem);
 
@@ -168,7 +147,6 @@ export function useGalleryData(options: {
       api,
       mapApiItem,
       excludeUploads,
-      filterModelIds,
     ],
   );
 
@@ -187,7 +165,7 @@ export function useGalleryData(options: {
     setIsInitialLoading(true);
     loadItems(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [username, JSON.stringify(filterMediaClasses), JSON.stringify(filterModelIds)]);
+  }, [username, JSON.stringify(filterMediaClasses)]);
 
   const loadMore = useCallback(() => {
     if (hasMore && !isLoadingRef.current) {

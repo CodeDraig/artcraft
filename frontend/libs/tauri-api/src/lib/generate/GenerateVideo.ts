@@ -44,7 +44,6 @@ export interface GenerateVideoRequest {
   video_batch_count?: number;
 
   // Deprecated on the Rust side (still read by some legacy handlers).
-  sora_orientation?: "portrait" | "landscape";
   grok_aspect_ratio?: "portrait" | "landscape" | "square";
 
   // Frontend metadata.

@@ -28,10 +28,7 @@ interface LoginModalProps {
   isSignUp?: boolean;
   /** Optional direct media URL for the right-pane showcase video. */
   videoUrl?: string;
-  // Accepted for backwards compatibility with existing call sites (MainApp
-  // passes these); no longer used now that the showcase is a single video.
-  videoSrc2D?: string;
-  videoSrc3D?: string;
+
 }
 
 export function LoginModal({

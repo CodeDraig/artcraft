@@ -116,11 +116,7 @@ pub enum CommonVideoModel {
   #[serde(rename = "seedance_2p5_u")]
   Seedance2p5Ultra,
 
-  #[serde(rename = "sora_2")]
-  Sora2,
 
-  #[serde(rename = "sora_2_pro")]
-  Sora2Pro,
 
   #[serde(rename = "veo_2")]
   Veo2,
@@ -195,8 +191,6 @@ impl CommonVideoModel {
       Self::Seedance2p5Preview => CommonModelType::Seedance2p5Preview,
       Self::Seedance2p5 => CommonModelType::Seedance2p5,
       Self::Seedance2p5Ultra => CommonModelType::Seedance2p5Ultra,
-      Self::Sora2 => CommonModelType::Sora2,
-      Self::Sora2Pro => CommonModelType::Sora2Pro,
       Self::Veo2 => CommonModelType::Veo2,
       Self::Veo3 => CommonModelType::Veo3,
       Self::Veo3Fast => CommonModelType::Veo3Fast,
@@ -253,8 +247,6 @@ mod tests {
     assert_serialization(CommonVideoModel::Seedance2p5Preview, "seedance_2p5_preview");
     assert_serialization(CommonVideoModel::Seedance2p5, "seedance_2p5");
     assert_serialization(CommonVideoModel::Seedance2p5Ultra, "seedance_2p5_u");
-    assert_serialization(CommonVideoModel::Sora2, "sora_2");
-    assert_serialization(CommonVideoModel::Sora2Pro, "sora_2_pro");
     assert_serialization(CommonVideoModel::Veo2, "veo_2");
     assert_serialization(CommonVideoModel::Veo3, "veo_3");
     assert_serialization(CommonVideoModel::Veo3Fast, "veo_3_fast");
@@ -304,8 +296,6 @@ mod tests {
       ("seedance_2p5_preview", CommonVideoModel::Seedance2p5Preview),
       ("seedance_2p5", CommonVideoModel::Seedance2p5),
       ("seedance_2p5_u", CommonVideoModel::Seedance2p5Ultra),
-      ("sora_2", CommonVideoModel::Sora2),
-      ("sora_2_pro", CommonVideoModel::Sora2Pro),
       ("veo_2", CommonVideoModel::Veo2),
       ("veo_3", CommonVideoModel::Veo3),
       ("veo_3_fast", CommonVideoModel::Veo3Fast),
@@ -362,8 +352,6 @@ mod tests {
       CommonVideoModel::Seedance2p5Preview,
       CommonVideoModel::Seedance2p5,
       CommonVideoModel::Seedance2p5Ultra,
-      CommonVideoModel::Sora2,
-      CommonVideoModel::Sora2Pro,
       CommonVideoModel::Veo2,
       CommonVideoModel::Veo3,
       CommonVideoModel::Veo3Fast,
@@ -419,8 +407,6 @@ mod tests {
       (CommonVideoModel::Seedance2p5Preview, CommonModelType::Seedance2p5Preview),
       (CommonVideoModel::Seedance2p5, CommonModelType::Seedance2p5),
       (CommonVideoModel::Seedance2p5Ultra, CommonModelType::Seedance2p5Ultra),
-      (CommonVideoModel::Sora2, CommonModelType::Sora2),
-      (CommonVideoModel::Sora2Pro, CommonModelType::Sora2Pro),
       (CommonVideoModel::Veo2, CommonModelType::Veo2),
       (CommonVideoModel::Veo3, CommonModelType::Veo3),
       (CommonVideoModel::Veo3Fast, CommonModelType::Veo3Fast),

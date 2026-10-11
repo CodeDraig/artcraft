@@ -24,7 +24,6 @@ pub enum GenerationProvider {
   Fal,
   Grok,
   Midjourney,
-  Sora,
   WorldLabs,
   Higgsfield,
   Krea,
@@ -52,7 +51,6 @@ impl GenerationProvider {
       Self::Fal => "fal",
       Self::Grok => "grok",
       Self::Midjourney => "midjourney",
-      Self::Sora => "sora",
       Self::WorldLabs => "world_labs",
       Self::Higgsfield => "higgsfield",
       Self::Krea => "krea",
@@ -71,7 +69,6 @@ impl GenerationProvider {
       "fal" => Ok(Self::Fal),
       "grok" => Ok(Self::Grok),
       "midjourney" => Ok(Self::Midjourney),
-      "sora" => Ok(Self::Sora),
       "world_labs" => Ok(Self::WorldLabs),
       "higgsfield" => Ok(Self::Higgsfield),
       "krea" => Ok(Self::Krea),
@@ -93,7 +90,6 @@ impl GenerationProvider {
       Self::Fal,
       Self::Grok,
       Self::Midjourney,
-      Self::Sora,
       Self::WorldLabs,
       Self::Higgsfield,
       Self::Krea,
@@ -122,7 +118,6 @@ mod tests {
       assert_serialization(GenerationProvider::Fal, "fal");
       assert_serialization(GenerationProvider::Grok, "grok");
       assert_serialization(GenerationProvider::Midjourney, "midjourney");
-      assert_serialization(GenerationProvider::Sora, "sora");
       assert_serialization(GenerationProvider::WorldLabs, "world_labs");
       assert_serialization(GenerationProvider::Higgsfield, "higgsfield");
       assert_serialization(GenerationProvider::Krea, "krea");
@@ -140,7 +135,6 @@ mod tests {
       assert_eq!(GenerationProvider::Fal.to_str(), "fal");
       assert_eq!(GenerationProvider::Grok.to_str(), "grok");
       assert_eq!(GenerationProvider::Midjourney.to_str(), "midjourney");
-      assert_eq!(GenerationProvider::Sora.to_str(), "sora");
       assert_eq!(GenerationProvider::WorldLabs.to_str(), "world_labs");
       assert_eq!(GenerationProvider::Higgsfield.to_str(), "higgsfield");
       assert_eq!(GenerationProvider::Krea.to_str(), "krea");
@@ -158,7 +152,6 @@ mod tests {
       assert_eq!(GenerationProvider::from_str("fal").unwrap(), GenerationProvider::Fal);
       assert_eq!(GenerationProvider::from_str("grok").unwrap(), GenerationProvider::Grok);
       assert_eq!(GenerationProvider::from_str("midjourney").unwrap(), GenerationProvider::Midjourney);
-      assert_eq!(GenerationProvider::from_str("sora").unwrap(), GenerationProvider::Sora);
       assert_eq!(GenerationProvider::from_str("world_labs").unwrap(), GenerationProvider::WorldLabs);
       assert_eq!(GenerationProvider::from_str("higgsfield").unwrap(), GenerationProvider::Higgsfield);
       assert_eq!(GenerationProvider::from_str("krea").unwrap(), GenerationProvider::Krea);
@@ -184,12 +177,11 @@ mod tests {
     #[test]
     fn all_variants() {
       let mut variants = GenerationProvider::all_variants();
-      assert_eq!(variants.len(), 14);
+      assert_eq!(variants.len(), 13);
       assert_eq!(variants.pop_first(), Some(GenerationProvider::Artcraft));
       assert_eq!(variants.pop_first(), Some(GenerationProvider::Fal));
       assert_eq!(variants.pop_first(), Some(GenerationProvider::Grok));
       assert_eq!(variants.pop_first(), Some(GenerationProvider::Midjourney));
-      assert_eq!(variants.pop_first(), Some(GenerationProvider::Sora));
       assert_eq!(variants.pop_first(), Some(GenerationProvider::WorldLabs));
       assert_eq!(variants.pop_first(), Some(GenerationProvider::Higgsfield));
       assert_eq!(variants.pop_first(), Some(GenerationProvider::Krea));

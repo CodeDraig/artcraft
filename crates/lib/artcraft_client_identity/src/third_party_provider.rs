@@ -9,14 +9,9 @@ pub struct ThirdPartyProvider {
 
 /// Every third party that gets an invented origin. Origins match what each provider's native
 /// Rust client already sends. First match wins, so more specific entries go first.
-pub const THIRD_PARTY_PROVIDERS: [ThirdPartyProvider; 9] = [
+pub const THIRD_PARTY_PROVIDERS: [ThirdPartyProvider; 8] = [
   ThirdPartyProvider { name: "Grok", domains: &["grok.com", "x.ai"], origin: "https://grok.com" },
   ThirdPartyProvider { name: "Midjourney", domains: &["midjourney.com"], origin: "https://www.midjourney.com" },
-  ThirdPartyProvider {
-    name: "Sora",
-    domains: &["sora.chatgpt.com", "sora.com", "openai.com", "oaistatic.com"],
-    origin: "https://sora.chatgpt.com",
-  },
   ThirdPartyProvider { name: "ChatGPT", domains: &["chatgpt.com"], origin: "https://chatgpt.com" },
   ThirdPartyProvider {
     name: "World Labs",

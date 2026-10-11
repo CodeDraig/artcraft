@@ -10,7 +10,6 @@ import {
 } from "./classy-model-selector-store";
 import { useEffect, useMemo } from "react";
 import { ModelPage } from "./model-pages";
-import { Provider } from "@storyteller/tauri-api";
 import { getProviderDisplayName, getProviderIcon } from "./provider-icons";
 import {
   Model,
@@ -31,7 +30,7 @@ interface ClassyModelSelectorProps {
   panelClassName?: string;
   showIconsInList?: boolean;
   triggerLabel?: string;
-  providersByModel?: Partial<Record<string, Provider[]>>;
+  providersByModel?: Partial<Record<string, GenerationProvider[]>>;
   providerTooltipDelayMs?: number;
   maxListHeight?: number | string;
   /**

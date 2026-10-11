@@ -1,7 +1,6 @@
 use crate::core::state::data_dir::app_data_root::AppDataRoot;
 use crate::services::midjourney::state::midjourney_credential_manager::MidjourneyCredentialManager;
 use crate::services::midjourney::windows::open_midjourney_login_window::open_midjourney_login_window;
-use crate::services::sora::windows::sora_login_window::open_sora_login_window::open_sora_login_window;
 use errors::AnyhowResult;
 use log::{error, info};
 use tauri::{AppHandle, State};

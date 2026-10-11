@@ -7,7 +7,6 @@ const GENERATION_PROVIDER_TO_CREATOR: Partial<Record<GenerationProvider, ModelCr
   [GenerationProvider.Artcraft]: ModelCreator.ArtCraft,
   [GenerationProvider.Grok]: ModelCreator.Grok,
   [GenerationProvider.Midjourney]: ModelCreator.Midjourney,
-  [GenerationProvider.Sora]: ModelCreator.OpenAi,
   [GenerationProvider.WorldLabs]: ModelCreator.WorldLabs,
   [GenerationProvider.Fal]: ModelCreator.Fal,
   [GenerationProvider.Higgsfield]: ModelCreator.Higgsfield,
@@ -45,8 +44,6 @@ export const getProviderDisplayName = (provider: GenerationProvider): string => 
       return "Grok";
     case GenerationProvider.Midjourney:
       return "Midjourney";
-    case GenerationProvider.Sora:
-      return "Sora / ChatGPT";
     case GenerationProvider.WorldLabs:
       return "World Labs";
     case GenerationProvider.Higgsfield:

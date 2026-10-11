@@ -2,20 +2,17 @@ import { useState, useRef, useEffect, useMemo, ReactNode } from "react";
 import { useSignals } from "@preact/signals-react/runtime";
 import { JobContextType, UploaderState } from "@storyteller/common";
 import { toast } from "@storyteller/ui-toaster";
-import { PopoverMenu, PopoverItem } from "@storyteller/ui-popover";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { GenerateIconButton } from "@storyteller/ui-button";
 import { GenerateImage, GenerateImageRequest, commandErrorMessage } from "@storyteller/tauri-api";
-import { ChevronDownIcon, ChevronUpIcon, MaximizeIcon } from "lucide-react";
+import { ChevronDownIcon, ChevronUpIcon } from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
 import { ImageModel, imageModelForProvider } from "@storyteller/model-list";
 import { arrayMove } from "@dnd-kit/sortable";
 import type { UploadMediaFn } from "@storyteller/api";
-import {
-  usePromptImageStore,
-  RefImage,
-  useEnterToGenerateStore,
-} from "./promptStore";
+import { usePromptImageStore } from "./promptImageStore";
+import { RefImage } from "./promptMedia";
+import { useEnterToGenerateStore } from "./enterToGenerateStore";
 import { useAutoGrowEditorHeight } from "./useAutoGrowEditorHeight";
 import { PromptFullscreenModal, useFullscreenPrompt } from "./PromptFullscreenModal";
 import { PromptFullscreenButton } from "./PromptFullscreenButton";
@@ -24,7 +21,6 @@ import { gtagEvent } from "@storyteller/google-analytics";
 import { twMerge } from "tailwind-merge";
 import { GenerationProvider } from "@storyteller/api-enums";
 import { AspectRatioPicker } from "./common/AspectRatioPicker";
-import { AspectRatioIcon } from "./common/AspectRatioIcon";
 import { GenerationCountPicker } from "./common/GenerationCountPicker";
 import { ResolutionPicker } from "./common/ResolutionPicker";
 import { QualityPicker } from "./common/QualityPicker";
@@ -103,10 +99,6 @@ export const PromptBoxImage = ({
 
   const prompt = usePromptImageStore((s) => s.prompt);
   const setPrompt = usePromptImageStore((s) => s.setPrompt);
-  const aspectRatio = usePromptImageStore((s) => s.aspectRatio);
-  const setAspectRatio = usePromptImageStore((s) => s.setAspectRatio);
-  const resolution = usePromptImageStore((s) => s.resolution);
-  const setResolution = usePromptImageStore((s) => s.setResolution);
   const storedGenerationCount = usePromptImageStore((s) => s.generationCount);
   const generationCount = isDirectMidjourney ? 4 : storedGenerationCount;
   const setGenerationCount = usePromptImageStore((s) => s.setGenerationCount);
@@ -238,41 +230,6 @@ export const PromptBoxImage = ({
   const commonQuality = usePromptImageStore((s) => s.commonQuality);
   const setCommonQuality = usePromptImageStore((s) => s.setCommonQuality);
 
-  const [aspectRatioList, setAspectRatioList] = useState<PopoverItem[]>([
-    {
-      label: "Wide",
-      selected: aspectRatio === "wide",
-      icon: <AspectRatioIcon ratio={[16, 10]} />,
-    },
-    {
-      label: "Tall",
-      selected: aspectRatio === "tall",
-      icon: <AspectRatioIcon ratio={[10, 16]} />,
-    },
-    {
-      label: "Square",
-      selected: aspectRatio === "square",
-      icon: <AspectRatioIcon ratio={[1, 1]} />,
-    },
-  ]);
-  const [resolutionList, setResolutionList] = useState<PopoverItem[]>([
-    {
-      label: "1K",
-      selected: resolution === "1k",
-      icon: <MaximizeIcon  className="h-4 w-4" />,
-    },
-    {
-      label: "2K",
-      selected: resolution === "2k",
-      icon: <MaximizeIcon  className="h-4 w-4" />,
-    },
-    {
-      label: "4K",
-      selected: resolution === "4k",
-      icon: <MaximizeIcon  className="h-4 w-4" />,
-    },
-  ]);
-
   useEffect(() => {
     if (imageMediaId && url) {
       const referenceImage: RefImage = {
@@ -292,38 +249,6 @@ export const PromptBoxImage = ({
     const defaultGenerations = selectedModel?.defaultGenerationCount || 4;
     setGenerationCount(defaultGenerations);
   }, [selectedModel, generationCount]);
-
-  useEffect(() => {
-    setAspectRatioList((prev) =>
-      prev.map((item) => ({
-        ...item,
-        selected: item.label.toLowerCase() === aspectRatio,
-      })),
-    );
-  }, [aspectRatio]);
-
-  useEffect(() => {
-    setResolutionList((prev) =>
-      prev.map((item) => ({
-        ...item,
-        selected: item.label.toLowerCase() === resolution,
-      })),
-    );
-  }, [resolution]);
-
-  const handleAspectRatioSelect = (selectedItem: PopoverItem) => {
-    setAspectRatio(selectedItem.label.toLowerCase() as any);
-    setAspectRatioList((prev) =>
-      prev.map((item) => ({
-        ...item,
-        selected: item.label === selectedItem.label,
-      })),
-    );
-  };
-
-  const handleResolutionSelect = (selectedItem: PopoverItem) => {
-    setResolution(selectedItem.label.toLowerCase() as any);
-  };
 
   const handlePaste = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
     e.preventDefault();
@@ -442,20 +367,6 @@ export const PromptBoxImage = ({
     }
   };
 
-  const getCurrentLegacyAspectRatioIcon = () => {
-    const selected = aspectRatioList.find((item) => item.selected);
-    switch (selected?.label?.toLowerCase()) {
-      case "wide":
-        return <AspectRatioIcon ratio={[16, 10]} />;
-      case "tall":
-        return <AspectRatioIcon ratio={[10, 16]} />;
-      case "square":
-        return <AspectRatioIcon ratio={[1, 1]} />;
-      default:
-        return <AspectRatioIcon ratio={[16, 10]} />;
-    }
-  };
-
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key !== "Enter") return;
     const isSubmitCombo = enterToGenerate && !e.shiftKey;
@@ -513,24 +424,7 @@ export const PromptBoxImage = ({
                   handleCommonAspectRatioSelect={setCommonAspectRatio}
                 />
               )}
-              {selectedModel?.canChangeAspectRatio &&
-                !selectedModel?.supportsNewAspectRatio() && (
-                  <Tooltip
-                    content="Aspect Ratio (Legacy)"
-                    position="top"
-                    className="z-50"
-                    closeOnClick={true}
-                  >
-                    <PopoverMenu
-                      items={aspectRatioList}
-                      onSelect={handleAspectRatioSelect}
-                      mode="toggle"
-                      panelTitle="Aspect Ratio (Legacy)"
-                      showIconsInList
-                      triggerIcon={getCurrentLegacyAspectRatioIcon()}
-                    />
-                  </Tooltip>
-                )}
+
               {selectedModel?.supportsNewResolution() && (
                 <ResolutionPicker
                   model={selectedModel}
@@ -538,26 +432,7 @@ export const PromptBoxImage = ({
                   handleCommonResolutionSelect={setCommonResolution}
                 />
               )}
-              {selectedModel?.canChangeResolution &&
-                !selectedModel?.supportsNewResolution() && (
-                  <Tooltip
-                    content="Resolution"
-                    position="top"
-                    className="z-50"
-                    closeOnClick={true}
-                  >
-                    <PopoverMenu
-                      items={resolutionList}
-                      onSelect={handleResolutionSelect}
-                      mode="toggle"
-                      panelTitle="Resolution"
-                      showIconsInList
-                      triggerIcon={
-                        <MaximizeIcon  className="h-4 w-4" />
-                      }
-                    />
-                  </Tooltip>
-                )}
+
               {selectedModel?.supportsQuality() && (
                 <QualityPicker
                   model={selectedModel}

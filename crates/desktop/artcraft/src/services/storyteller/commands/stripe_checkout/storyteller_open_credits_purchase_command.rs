@@ -1,9 +1,7 @@
-use crate::core::commands::deprecated::image_edit::enqueue_edit_image_command::{ImageEditModel, EditImageQuality, EditImageSize};
 use crate::core::state::app_env_configs::app_env_configs::AppEnvConfigs;
 use crate::core::state::data_dir::app_data_root::AppDataRoot;
 use crate::services::midjourney::state::midjourney_credential_manager::MidjourneyCredentialManager;
 use crate::services::midjourney::windows::open_midjourney_login_window::open_midjourney_login_window;
-use crate::services::sora::windows::sora_login_window::open_sora_login_window::open_sora_login_window;
 use crate::services::storyteller::state::storyteller_credential_manager::StorytellerCredentialManager;
 use crate::services::storyteller::windows::open_storyteller_billing_window::{open_storyteller_billing_window, OpenStorytellerBillingWindowArgs, BillingWindowCase};
 use artcraft_api_defs::stripe_artcraft::create_subscription_checkout::PlanBillingCadence;

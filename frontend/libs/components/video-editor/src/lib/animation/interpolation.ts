@@ -9,7 +9,7 @@ import type {
   ScalarSegmentType,
 } from "./types";
 import type { ParamValue } from "../params";
-import { mediaTime } from "../wasm";
+import { mediaTime, type MediaTime } from "../wasm";
 import {
   getBezierPoint,
   getDefaultLeftHandle,
@@ -431,4 +431,42 @@ export function getChannelValueAtTime({
     time,
     fallbackValue,
   });
+}
+
+
+export function getScalarSegmentType({
+  interpolation,
+}: {
+  interpolation: AnimationInterpolation;
+}): ScalarSegmentType {
+  if (interpolation === "hold") {
+    return "step";
+  }
+  return interpolation === "bezier" ? "bezier" : "linear";
+}
+
+export function createScalarKey({
+  id,
+  time,
+  value,
+  interpolation,
+  previousKey,
+}: {
+  id: string;
+  time: MediaTime;
+  value: number;
+  interpolation?: AnimationInterpolation;
+  previousKey?: ScalarAnimationKey;
+}): ScalarAnimationKey {
+  return {
+    id,
+    time,
+    value,
+    leftHandle: previousKey?.leftHandle,
+    rightHandle: previousKey?.rightHandle,
+    segmentToNext:
+      previousKey?.segmentToNext ??
+      getScalarSegmentType({ interpolation: interpolation ?? "linear" }),
+    tangentMode: previousKey?.tangentMode ?? "flat",
+  };
 }

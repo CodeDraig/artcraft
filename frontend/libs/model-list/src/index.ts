@@ -13,9 +13,6 @@ export * from "./lib/classes/metadata/ModelDescriptions.js";
 export * from "./lib/classes/metadata/PromptFormatters.js";
 export * from "./lib/classes/metadata/ModelTag.js";
 export * from "./lib/classes/metadata/SizeOption.js";
-export * from "./lib/legacy/ModelConfig.js";
-export * from "./lib/legacy/ModelInfo.js";
-export * from "./lib/legacy/Models.js";
 export * from "./lib/lists/AllModels.js";
 export * from "./lib/lists/AllModelsById.js";
 export * from "./lib/lists/ImageModels.js";
@@ -24,7 +21,9 @@ export * from "./lib/classes/SplatModel.js";
 export * from "./lib/lists/SplatModels.js";
 export * from "./lib/classes/Object3DModel.js";
 export * from "./lib/lists/Object3DModels.js";
-export * from "./lib/loader/buildModelsFromListing.js";
+export * from "./lib/loader/buildImageModelsFromListing.js";
+export * from "./lib/loader/buildVideoModelsFromListing.js";
+export type { ListingModelBase, ListingImageModel, ListingVideoModel } from "./lib/loader/ListingModel.js";
 
 export * from "./lib/classes/videoOptions.js";
 

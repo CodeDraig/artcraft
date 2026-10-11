@@ -1,3 +1,6 @@
+export { cloneAnimations } from "./clone-animations";
+export { clampAnimationsToDuration, splitAnimationsAtTime } from "./split-animations";
+
 export {
   getChannelValueAtTime,
   getDiscreteChannelValueAtTime,
@@ -7,14 +10,11 @@ export {
 } from "./interpolation";
 
 export {
-  clampAnimationsToDuration,
-  cloneAnimations,
   getChannel,
   removeElementKeyframe,
   retimeElementKeyframe,
   setBindingComponentChannel,
   setChannel,
-  splitAnimationsAtTime,
   updateScalarKeyframeCurve,
   upsertPathKeyframe,
 } from "./keyframes";

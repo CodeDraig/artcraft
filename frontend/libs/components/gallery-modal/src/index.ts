@@ -11,3 +11,6 @@ export * from "./lib/folderUtils";
 export * from "./lib/folderMapping";
 export * from "./lib/promptFolderDrop";
 export * from "./lib/galleryDnd";
+export type { GalleryItem } from "./lib/GalleryItem";
+export { clearGalleryCache } from "./lib/galleryCache";
+export { LazyDateGroup, type LazyDateGroupProps } from "./lib/LazyDateGroup";

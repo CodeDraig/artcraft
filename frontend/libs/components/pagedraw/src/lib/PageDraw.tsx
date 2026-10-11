@@ -1,34 +1,17 @@
-import React, {
-  useState,
-  useRef,
-  useEffect,
-  useCallback,
-  useMemo,
-  memo,
-} from "react";
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { DRAW_LAYER_ID, INPAINT_LAYER_ID, PaintSurface } from "./PaintSurface";
 import "./pagedraw.css";
 import PromptEditor from "./PromptEditor/PromptEditor";
 import SideToolbar from "./components/ui/SideToolbar";
-import {
-  AspectRatioType,
-  type SceneState,
-  useSceneStore,
-} from "./stores/SceneState";
+import { AspectRatioType, type SceneState, useSceneStore } from "./stores/SceneState";
 import { usePagedrawKeybinds } from "./hooks/usePagedrawKeybinds";
 import { Cheatsheet, useCheatsheetVisibility } from "@storyteller/keybinds";
 import Konva from "konva";
 import { ContextMenuContainer } from "./components/ui/ContextMenu";
 import InpaintToolBar from "./components/ui/InpaintToolBar";
 import { ImageModel } from "@storyteller/model-list";
-import {
-  useCanvas2dPageModelList,
-  ClassyModelSelector,
-  ModelPage,
-  useSelectedImageModel,
-  useSelectedProviderForModel,
-} from "@storyteller/ui-model-selector";
+import { useCanvas2dPageModelList, ClassyModelSelector, ModelPage, useSelectedImageModel, useSelectedProviderForModel } from "@storyteller/ui-model-selector";
 import { HelpMenuButton } from "@storyteller/ui-help-menu";
 import { CostCalculatorButton } from "@storyteller/ui-pricing-modal";
 import { GenerationProvider } from "@storyteller/api-enums";
@@ -39,226 +22,18 @@ import { compositeInWorker, maskInWorker } from "./utilities/generatePipeline";
 import { RefImage, usePrompt2DStore } from "@storyteller/ui-promptbox";
 import { PromptsApi } from "@storyteller/api";
 import toast from "react-hot-toast";
-import {
-  render3DModelToDataUrl,
-  DEFAULT_MODEL3D_PARAMS,
-  type Model3DParams,
-} from "./utilities/render3DModel";
-import {
-  Model3DOverlay,
-  type Model3DOverlayHandle,
-} from "./components/Model3DOverlay";
-import { CameraIcon, Maximize2Icon, RefreshCwIcon } from "lucide-react";
+import { render3DModelToDataUrl, DEFAULT_MODEL3D_PARAMS, type Model3DParams } from "./utilities/render3DModel";
+import { Model3DOverlay, type Model3DOverlayHandle } from "./components/Model3DOverlay";
 import type { PageDrawAdapter } from "./adapter";
+import { Edit3DButton } from "./Edit3DButton";
+import { Edit3DScrubControls } from "./Edit3DScrubControls";
 
 const PAGE_ID: ModelPage = ModelPage.Canvas2D;
+
 
 // Order the shape hotkey cycles through (matches the submenu's visual order).
 const SHAPE_CYCLE = ["rectangle", "circle", "triangle"] as const;
 
-export const DecodeBase64ToImage = async (
-  base64String: string,
-): Promise<ImageBitmap> => {
-  const img = document.createElement("img");
-
-  const dataUrl = base64String.startsWith("data:")
-    ? base64String
-    : `data:image/png;base64,${base64String}`;
-
-  return new Promise((resolve, reject) => {
-    img.onload = async () => {
-      try {
-        const bitmap = await createImageBitmap(img);
-        resolve(bitmap);
-      } catch (error) {
-        reject(error);
-      }
-    };
-
-    img.onerror = () => reject(new Error("Failed to load image"));
-
-    img.src = dataUrl;
-  });
-};
-
-// ─── Edit3DButton ─────────────────────────────────────────────────────────────
-interface Edit3DButtonProps {
-  nodeId: string;
-  stageRef: { current: Konva.Stage };
-  onEdit: (nodeId: string) => void;
-}
-
-const Edit3DButton = memo(function Edit3DButton({
-  nodeId,
-  stageRef,
-  onEdit,
-}: Edit3DButtonProps) {
-  const [, forceUpdate] = useState(0);
-  const bump = useCallback(() => forceUpdate((t) => t + 1), []);
-  const [interacting, setInteracting] = useState(false);
-
-  useEffect(() => {
-    const stage = stageRef.current;
-    if (!stage?.on) return;
-
-    const ns = ".edit3dbtn";
-    stage.on(
-      `dragmove${ns} xChange${ns} yChange${ns} scaleXChange${ns} scaleYChange${ns}`,
-      bump,
-    );
-
-    const transformers = stage.find("Transformer");
-    transformers.forEach((tr) => {
-      tr.on(`transformstart${ns}`, () => setInteracting(true));
-      tr.on(`transformend${ns}`, () =>
-        requestAnimationFrame(() => {
-          setInteracting(false);
-          bump();
-        }),
-      );
-    });
-
-    const konvaNode = stage.findOne("#" + nodeId);
-    if (konvaNode) {
-      konvaNode.on(`dragstart${ns}`, () => setInteracting(true));
-      konvaNode.on(`dragend${ns}`, () =>
-        requestAnimationFrame(() => {
-          setInteracting(false);
-          bump();
-        }),
-      );
-    }
-
-    return () => {
-      stage.off(ns);
-      transformers.forEach((tr) => tr.off(ns));
-      konvaNode?.off(ns);
-    };
-  }, [stageRef, bump, nodeId]);
-
-  if (interacting) return null;
-
-  const stage = stageRef.current;
-  if (!stage?.container) return null;
-
-  const konvaNode = stage.findOne("#" + nodeId) as Konva.Shape | undefined;
-  if (!konvaNode) return null;
-
-  const clientRect = konvaNode.getClientRect();
-  const stageContainerRect = stage.container().getBoundingClientRect();
-  const btnLeft = stageContainerRect.left + clientRect.x + clientRect.width / 2;
-  const btnTop = stageContainerRect.top + clientRect.y + clientRect.height / 2;
-
-  return (
-    <button
-      className="pointer-events-auto fixed z-40 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary px-3 py-1 text-xs font-semibold text-white shadow-lg hover:bg-primary-400"
-      style={{ left: btnLeft, top: btnTop }}
-      onPointerDown={(e) => e.stopPropagation()}
-      onClick={() => onEdit(nodeId)}
-    >
-      Edit 3D
-    </button>
-  );
-});
-
-// ─── DragScrubButton ──────────────────────────────────────────────────────────
-function DragScrubButton({
-  icon,
-  title,
-  onDrag,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  onDrag: (dx: number, dy: number) => void;
-}) {
-  const onPointerDown = (e: React.PointerEvent<HTMLButtonElement>) => {
-    e.stopPropagation();
-    e.currentTarget.setPointerCapture(e.pointerId);
-  };
-  const onPointerMove = (e: React.PointerEvent<HTMLButtonElement>) => {
-    if (e.buttons === 0) return;
-    onDrag(e.movementX, e.movementY);
-  };
-  return (
-    <button
-      title={title}
-      className="flex h-10 w-10 cursor-move items-center justify-center rounded-full bg-black/70 text-white shadow-lg hover:bg-black/90 active:bg-primary"
-      onPointerDown={onPointerDown}
-      onPointerMove={onPointerMove}
-    >
-      {icon}
-    </button>
-  );
-}
-
-// ─── Edit3DScrubControls ──────────────────────────────────────────────────────
-interface Edit3DScrubControlsProps {
-  nodeId: string;
-  stageRef: { current: Konva.Stage };
-  overlayHandle: React.RefObject<Model3DOverlayHandle | null>;
-}
-
-const Edit3DScrubControls = memo(function Edit3DScrubControls({
-  nodeId,
-  stageRef,
-  overlayHandle,
-}: Edit3DScrubControlsProps) {
-  const [, forceUpdate] = useState(0);
-  const bump = useCallback(() => forceUpdate((t) => t + 1), []);
-
-  useEffect(() => {
-    const stage = stageRef.current;
-    if (!stage?.on) return;
-    const ns = ".edit3dcontrols";
-    stage.on(
-      `dragmove${ns} xChange${ns} yChange${ns} scaleXChange${ns} scaleYChange${ns}`,
-      bump,
-    );
-    return () => {
-      stage.off(ns);
-    };
-  }, [stageRef, bump, nodeId]);
-
-  const stage = stageRef.current;
-  if (!stage?.container) return null;
-  const konvaNode = stage.findOne("#" + nodeId) as Konva.Shape | undefined;
-  if (!konvaNode) return null;
-
-  const clientRect = konvaNode.getClientRect();
-  const stageContainerRect = stage.container().getBoundingClientRect();
-  const cx = stageContainerRect.left + clientRect.x + clientRect.width / 2;
-  const cy = stageContainerRect.top + clientRect.y + clientRect.height / 2;
-
-  return (
-    <div
-      className="pointer-events-auto fixed z-[60] flex -translate-x-1/2 -translate-y-1/2 items-center gap-2"
-      style={{ left: cx, top: cy }}
-    >
-      <DragScrubButton
-        icon={<Maximize2Icon />}
-        title="Scale — drag"
-        onDrag={(dx, dy) => overlayHandle.current?.onScaleDrag(dx, dy)}
-      />
-      <DragScrubButton
-        icon={<RefreshCwIcon />}
-        title="Rotate — drag"
-        onDrag={(dx, dy) => overlayHandle.current?.onRotateDrag(dx, dy)}
-      />
-      <DragScrubButton
-        icon={<CameraIcon />}
-        title="Field of view — drag"
-        onDrag={(dx, dy) => overlayHandle.current?.onFovDrag(dx, dy)}
-      />
-      <button
-        onClick={() => overlayHandle.current?.commit()}
-        className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-sm font-bold text-white shadow-lg hover:bg-primary-400"
-        onPointerDown={(e) => e.stopPropagation()}
-      >
-        ✓
-      </button>
-    </div>
-  );
-});
 
 // ─── PageDraw ─────────────────────────────────────────────────────────────────
 
@@ -284,6 +59,7 @@ interface PageDrawProps {
   showBottomRightControls?: boolean;
 }
 
+
 const PageDraw = ({
   adapter,
   backgroundClassName = "bg-ui-background",
@@ -291,8 +67,6 @@ const PageDraw = ({
   showBottomRightControls = true,
 }: PageDrawProps) => {
   const canvas2dModelList = useCanvas2dPageModelList();
-  const canvasWidth = useRef<number>(1024);
-  const canvasHeight = useRef<number>(1024);
   const [isSelecting, setIsSelecting] = useState<boolean>(false);
   const [editing3DNodeId, setEditing3DNodeId] = useState<string | null>(null);
   const overlayHandleRef = useRef<Model3DOverlayHandle>(null);
@@ -557,7 +331,7 @@ const PageDraw = ({
         y: (canvasPosition.y - stage.y()) / stage.scaleY(),
       };
 
-      if (item.mediaClass === "dimensional") {
+      if (item.mediaClass === "mesh") {
         const modelUrl = item.fullImage;
         if (!modelUrl) {
           console.error("No model URL available for 3D item");
@@ -1169,14 +943,6 @@ const PageDraw = ({
     ],
   );
 
-  const handleCanvasSizeChange = useCallback(
-    (width: number, height: number) => {
-      canvasWidth.current = width;
-      canvasHeight.current = height;
-    },
-    [],
-  );
-
   const isLocked = useMemo(
     () =>
       selectedNodeIds.some((id) => {
@@ -1333,7 +1099,6 @@ const PageDraw = ({
             drawNodes={displayNodes}
             inpaintLineNodes={inpaintLineNodes}
             selectedNodeIds={selectedNodeIds}
-            onCanvasSizeChange={handleCanvasSizeChange}
             fillColor={fillColor}
             activeTool={activeTool}
             brushColor={brushColor}
@@ -1382,5 +1147,6 @@ const PageDraw = ({
     </>
   );
 };
+
 
 export default PageDraw;

@@ -1,5 +1,5 @@
 use crate::core::commands::generate::omni::{self, Modality, OmniRequest, OmniResult};
-use crate::core::commands::generate::omni::dispatch::local_error;
+use crate::core::commands::generate::omni::errors::local_error;
 use tauri::AppHandle;
 
 #[tauri::command]

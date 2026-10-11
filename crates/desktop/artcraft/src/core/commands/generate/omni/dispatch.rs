@@ -1,9 +1,10 @@
+use super::errors::{api_error, command_error, local_error};
+use super::image_inputs::resolve_image_inputs;
 use super::request::{Modality, OmniRequest};
 use crate::core::commands::enqueue::common::notify_frontend_of_errors::notify_frontend_of_errors;
 use crate::core::commands::enqueue::generate_error::{GenerateError, MissingCredentialsReason};
 use crate::core::commands::enqueue::task_enqueue_success::TaskEnqueueSuccess;
-use crate::core::commands::generate::generate_image::utils::parse_semantic_media_files::{resolve_image_field, resolve_mask_field};
-use crate::core::commands::response::failure_response_wrapper::{CommandErrorResponseWrapper, CommandErrorStatus};
+use crate::core::commands::response::failure_response_wrapper::CommandErrorStatus;
 use crate::core::commands::response::shorthand::Response;
 use crate::core::commands::response::success_response_wrapper::SerializeMarker;
 use crate::core::events::basic_sendable_event_trait::BasicSendableEvent;
@@ -15,17 +16,12 @@ use crate::core::state::artcraft_usage_tracker::artcraft_usage_tracker::Artcraft
 use crate::core::state::artcraft_usage_tracker::artcraft_usage_type::{ArtcraftUsagePage, ArtcraftUsageType};
 use crate::core::state::task_database::TaskDatabase;
 use crate::services::storyteller::state::storyteller_credential_manager::StorytellerCredentialManager;
-use artcraft_client::credentials::storyteller_credential_set::StorytellerCredentialSet;
-use artcraft_client::error::api_error::ApiError;
-use artcraft_client::error::storyteller_error::StorytellerError;
-use artcraft_client::utils::api_host::ApiHost;
 use artcraft_client::utils::basic_json_post_request::basic_json_post_request;
 use enums::common::generation_provider::GenerationProvider;
 use log::error;
 use serde::{Deserialize, Serialize};
-use serde_json::{Map, Value};
+use serde_json::Value;
 use tauri::{AppHandle, Manager};
-use tokens::tokens::media_files::MediaFileToken;
 use uuid_utils::uuid::generate_random_uuid;
 
 #[derive(Deserialize, Serialize)]
@@ -100,64 +96,6 @@ pub async fn estimate(request: OmniRequest, modality: Modality, app: &AppHandle)
   Ok(response.into())
 }
 
-pub fn adapt_legacy_response<T: Serialize, E: Serialize, P: Serialize>(response: Response<T, E, P>) -> OmniResult {
-  match response {
-    Ok(response) => Ok(OmniResponse(serde_json::to_value(response.payload).map_err(local_error)?).into()),
-    Err(err) => Err(CommandErrorResponseWrapper { status: err.status, error_message: err.error_message.or_else(|| serde_json::to_value(err.error_details).ok().and_then(|value| value.get("error_message").and_then(Value::as_str).map(str::to_owned))), error_type: err.error_type.and_then(|value| serde_json::to_value(value).ok()).and_then(|value| value.as_str().map(str::to_owned)), error_details: None }),
-  }
-}
-
-pub fn decode_native<T: serde::de::DeserializeOwned>(request: OmniRequest) -> Result<T, CommandErrorResponseWrapper<String, ()>> {
-  serde_json::from_value(serde_json::to_value(request).map_err(local_error)?).map_err(|err| command_error(CommandErrorStatus::BadRequest, "bad_input", err.to_string()))
-}
-
-pub fn local_error(err: impl std::fmt::Display) -> CommandErrorResponseWrapper<String, ()> {
-  command_error(CommandErrorStatus::ServerError, "server_error", err.to_string())
-}
-
-fn api_error(err: &StorytellerError) -> CommandErrorResponseWrapper<String, ()> {
-  match err {
-    StorytellerError::Api(ApiError::InvalidRequest(body)) => command_error(CommandErrorStatus::BadRequest, "bad_input", api_message(body)),
-    StorytellerError::Api(ApiError::Unauthorized(body) | ApiError::Forbidden(body)) => command_error(CommandErrorStatus::Unauthorized, "unauthorized", api_message(body)),
-    StorytellerError::Api(ApiError::TooManyRequests(body)) => command_error(CommandErrorStatus::TooManyRequests, "too_many_requests", api_message(body)),
-    StorytellerError::Api(ApiError::PaymentRequired(body)) => command_error(CommandErrorStatus::BadRequest, "billing_issue", api_message(body)),
-    _ => local_error(err),
-  }
-}
-
-fn api_message(body: &str) -> String {
-  serde_json::from_str::<Value>(body).ok().and_then(|value| value.get("error_message").or_else(|| value.get("message")).and_then(Value::as_str).map(str::to_owned)).unwrap_or_else(|| body.to_owned())
-}
-
-fn command_error(status: CommandErrorStatus, kind: &str, message: String) -> CommandErrorResponseWrapper<String, ()> {
-  CommandErrorResponseWrapper { status, error_type: Some(kind.into()), error_message: Some(message), error_details: None }
-}
-
-async fn resolve_image_inputs(fields: &mut Map<String, Value>, maybe_creds: Option<&StorytellerCredentialSet>, host: &ApiHost) -> Result<(), CommandErrorResponseWrapper<String, ()>> {
-  let mut refs = Vec::new();
-  for name in ["canvas_image", "scene_image", "inpainting_mask_image"] {
-    let token_key = format!("{}_media_token", name);
-    let bytes_key = format!("{}_raw_bytes", name);
-    let token: Option<MediaFileToken> = serde_json::from_value(fields.remove(&token_key).unwrap_or(Value::Null)).map_err(local_error)?;
-    let bytes: Option<Vec<u8>> = serde_json::from_value(fields.remove(&bytes_key).unwrap_or(Value::Null)).map_err(local_error)?;
-    let resolved = if let Some(creds) = maybe_creds { if name == "inpainting_mask_image" { resolve_mask_field(token.as_ref(), bytes.as_deref(), creds, host).await } else { resolve_image_field(name, token.as_ref(), bytes.as_deref(), creds, host).await }.map_err(|err| local_error(format!("{:?}", err)))?.map(|token| token.to_string()) } else { token.map(|token| token.to_string()).or_else(|| bytes.map(|_| "mf_estimate_reference".into())) };
-    if let Some(token) = resolved {
-      if name == "inpainting_mask_image" {
-        fields.insert(token_key, Value::String(token));
-      } else {
-        refs.push(Value::String(token));
-      }
-    }
-  }
-  if !refs.is_empty() {
-    if let Some(Value::Array(existing)) = fields.remove("image_media_tokens") {
-      refs.extend(existing);
-    }
-    fields.insert("image_media_tokens".into(), Value::Array(refs));
-  }
-  Ok(())
-}
-
 fn job_tokens(response: &Value) -> Vec<String> {
   let mut result = Vec::new();
   if let Some(primary) = response.get("inference_job_token").and_then(Value::as_str) {
@@ -196,13 +134,6 @@ fn record_usage(app: &AppHandle, request: &OmniRequest, modality: Modality, coun
 mod tests {
   use super::*;
   use serde_json::json;
-
-  #[test]
-  fn invalid_options_return_the_api_message() {
-    let err = api_error(&StorytellerError::Api(ApiError::InvalidRequest(r#"{"success":false,"error_message":"Duration must be between 4 and 30 seconds."}"#.into())));
-    assert!(matches!(err.status, CommandErrorStatus::BadRequest));
-    assert_eq!(err.error_message.as_deref(), Some("Duration must be between 4 and 30 seconds."));
-  }
 
   #[test]
   fn batch_tracks_each_job_once() {

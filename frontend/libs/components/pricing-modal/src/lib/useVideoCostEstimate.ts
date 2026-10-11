@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { ModelPage } from "@storyteller/ui-model-selector";
-import { Model, VideoModel, resolveVideoDuration, resolveVideoGenerationCount, resolveVideoOutputFormat, videoResolutionValue } from "@storyteller/model-list";
+import { Model, VideoModel, resolveVideoDuration, resolveVideoGenerationCount, resolveVideoOutputFormat } from "@storyteller/model-list";
 import { GenerationProvider } from "@storyteller/api-enums";
 import { usePromptVideoStore } from "@storyteller/ui-promptbox";
 import {
@@ -47,7 +47,7 @@ export function useVideoCostEstimate(
       ? videoAspectRatioToCommonAspectRatio(aspectRatio, videoModel.sizeOptions)
         ?? videoModel.defaultAspectRatio ?? videoModel.sizeOptions[0]?.tauriValue
       : undefined;
-    const commonResolution = videoModel.resolutionOptions?.length ? videoResolutionValue(resolution) : undefined;
+    const commonResolution = videoModel.resolutionOptions?.length ? resolution : undefined;
     const isReferenceMode = inputMode === "reference" && !!videoModel.supportsReferenceMode;
     const generationMode = videoStoreToGenerationMode(
       inputMode,

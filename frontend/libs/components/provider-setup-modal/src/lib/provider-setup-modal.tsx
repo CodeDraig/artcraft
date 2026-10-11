@@ -17,7 +17,6 @@ export function ProviderSetupModal({
   useShowProviderLoginModalEvent(async (event) => {
     // Retained native handlers can still emit these events for old tasks.
     if (
-      event.provider === GenerationProvider.Sora ||
       event.provider === GenerationProvider.WorldLabs
     ) {
       return;

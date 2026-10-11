@@ -33,7 +33,6 @@ export function ProviderBillingModal({
     case GenerationProvider.Fal:
     case GenerationProvider.Grok:
     case GenerationProvider.Midjourney:
-    case GenerationProvider.Sora:
     case GenerationProvider.WorldLabs:
     case GenerationProvider.Higgsfield:
     case GenerationProvider.Krea:

@@ -3,41 +3,14 @@ import { twMerge } from "tailwind-merge";
 import { Label } from "@storyteller/ui-label";
 import { useEffect, useMemo, useState } from "react";
 
-type AppTheme = "light" | "gray" | "black" | "aurora" | "sunset";
-
-const THEME_STORAGE_KEY = "st-theme";
-
-function getStoredTheme(): AppTheme {
-  const value = (localStorage.getItem(THEME_STORAGE_KEY) || "").trim();
-  if (
-    value === "light" ||
-    value === "gray" ||
-    value === "black" ||
-    value === "aurora" ||
-    value === "sunset" ||
-    value === "gradient" /* backward compat */
-  ) {
-    return value === "gradient" ? "aurora" : (value as AppTheme);
-  }
-  return "gray";
-}
-
-function applyTheme(theme: AppTheme) {
-  const root = document.documentElement;
-  const toRemove: string[] = [];
-  root.classList.forEach((c) => {
-    if (c.startsWith("theme-")) toRemove.push(c);
-  });
-  toRemove.forEach((c) => root.classList.remove(c));
-  root.classList.add(`theme-${theme}`);
-  localStorage.setItem(THEME_STORAGE_KEY, theme);
-}
+import { AppTheme, getStoredTheme, applyTheme, THEME_STORAGE_KEY } from "@storyteller/common";
 
 export const AppearanceSettingsPane = () => {
   const [selected, setSelected] = useState<AppTheme>(getStoredTheme());
 
   useEffect(() => {
     applyTheme(selected);
+    localStorage.setItem(THEME_STORAGE_KEY, selected);
   }, [selected]);
 
   const themes = useMemo(

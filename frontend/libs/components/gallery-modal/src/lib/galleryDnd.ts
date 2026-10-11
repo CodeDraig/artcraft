@@ -1,4 +1,4 @@
-import { GalleryItem } from "./gallery-modal";
+import { GalleryItem } from "./GalleryItem";
 import {
   galleryDragHidesImmediately,
   galleryModalDraggingUnder,
@@ -284,7 +284,6 @@ function onPointerUp(event: PointerEvent) {
     } else if (
       dragState.modalHidden &&
       (dragState.item.mediaClass === "image" ||
-        dragState.item.mediaClass === "dimensional" ||
         dragState.item.mediaClass === "mesh" ||
         dragState.item.mediaClass === "splat")
     ) {

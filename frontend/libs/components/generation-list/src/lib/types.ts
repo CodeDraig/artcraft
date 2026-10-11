@@ -5,17 +5,11 @@ export type GenerationMediaClass =
   | "image"
   | "video"
   | "audio"
-  // Deprecated pre-split 3D class; rows persist until the backfill lands.
-  | "dimensional"
   | "mesh"
   | "splat";
 
-// The backend used to file all 3D media under the (now deprecated) coarse
-// "dimensional" class; new records are written as "mesh" (3D models) or
-// "splat" (gaussian splats). Treat all three as 3D.
 export function is3DMediaClass(mediaClass: string | undefined | null): boolean {
   return (
-    mediaClass === "dimensional" ||
     mediaClass === "mesh" ||
     mediaClass === "splat"
   );
@@ -28,7 +22,6 @@ export function batchNoun(mediaClass: GenerationMediaClass): string {
       return "videos";
     case "audio":
       return "audio clips";
-    case "dimensional":
     case "mesh":
       return "3D models";
     case "splat":

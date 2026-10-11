@@ -1,3 +1,4 @@
+import type { PromptResolution } from "./promptResolution";
 import { useState, useRef, useEffect, type ReactNode } from "react";
 import { IsDesktopApp } from "@storyteller/tauri-utils";
 import { CameraIcon, ChevronDownIcon, ChevronUpIcon, DownloadIcon, Grid2x2Icon, HistoryIcon, MaximizeIcon, MousePointerIcon, PlusIcon, RectangleHorizontalIcon, RectangleVerticalIcon, SaveIcon, SquareIcon, WandSparklesIcon } from "lucide-react";
@@ -26,11 +27,11 @@ import {
   GenerateImage,
   GenerateImageRequest,
 } from "@storyteller/tauri-api";
-import { usePrompt3DStore, useEnterToGenerateStore } from "./promptStore";
+import { usePrompt3DStore } from "./prompt3DStore";
+import { useEnterToGenerateStore } from "./enterToGenerateStore";
 import { gtagEvent } from "@storyteller/google-analytics";
 import {
   CommonAspectRatio,
-  CommonResolution,
   ImageModel,
 } from "@storyteller/model-list";
 import { GenerationProvider } from "@storyteller/api-enums";
@@ -184,17 +185,20 @@ export const PromptBox3D = ({
   const [resolutionList, setResolutionList] = useState<PopoverItem[]>([
     {
       label: "1K",
-      selected: resolution === "1k",
+      action: "one_k",
+      selected: resolution === "one_k",
       icon: <MaximizeIcon  className="h-4 w-4" />,
     },
     {
       label: "2K",
-      selected: resolution === "2k",
+      action: "two_k",
+      selected: resolution === "two_k",
       icon: <MaximizeIcon  className="h-4 w-4" />,
     },
     {
       label: "4K",
-      selected: resolution === "4k",
+      action: "four_k",
+      selected: resolution === "four_k",
       icon: <MaximizeIcon  className="h-4 w-4" />,
     },
   ]);
@@ -229,7 +233,7 @@ export const PromptBox3D = ({
     setResolutionList((prev) =>
       prev.map((item) => ({
         ...item,
-        selected: item.label.toLowerCase() === resolution,
+        selected: item.action === resolution,
       })),
     );
   }, [resolution]);
@@ -279,7 +283,7 @@ export const PromptBox3D = ({
   };
 
   const handleResolutionSelect = (selectedItem: PopoverItem) => {
-    setResolution(selectedItem.label.toLowerCase() as any);
+    setResolution(selectedItem.action as PromptResolution);
   };
 
   // ImagePromptRow will handle uploads and gallery internally
@@ -415,7 +419,7 @@ export const PromptBox3D = ({
         prompt: prompt,
         idempotency_token: crypto.randomUUID(),
         aspect_ratio: aspectRatio ?? null,
-        resolution: getCurrentResolution() ?? null,
+        resolution: resolution ?? null,
         image_batch_count: 1,
         image_media_tokens:
           imageMediaTokens.length > 0 ? imageMediaTokens : null,
@@ -453,7 +457,7 @@ export const PromptBox3D = ({
 
     setTimeout(() => {
       // TODO(bt,2025-05-08): This is a hack so we don't accidentally wind up with a permanently disabled prompt box if
-      // the backend hangs on a given request. (Sometimes Sora doesn't respond.) Ideally what we would do instead is only
+      // the backend hangs on a given request. Ideally what we would do instead is only
       // force the prompt box to be enabled again as long as another request isn't running, ie. if we just fired off two
       // requests in succession, we wouldn't want to turn it off as the first one gets submitted.
       console.debug("Turn off blocking of prompt box...");
@@ -488,7 +492,7 @@ export const PromptBox3D = ({
           prompt: prompt,
           batch_size: 1,
           aspect_ratio: aspectRatio,
-          resolution: getCurrentResolution(),
+          resolution: resolution,
         };
 
         if (!!selectedProvider) {
@@ -572,20 +576,6 @@ export const PromptBox3D = ({
       case CameraAspectRatio.SQUARE_1_1:
       default:
         return CommonAspectRatio.Square;
-    }
-  };
-
-  const getCurrentResolution = (): CommonResolution | undefined => {
-    const selected = resolutionList.find((item) => item.selected);
-    switch (selected?.label) {
-      case "1k":
-        return CommonResolution.OneK;
-      case "2k":
-        return CommonResolution.TwoK;
-      case "4k":
-        return CommonResolution.FourK;
-      default:
-        return undefined;
     }
   };
 

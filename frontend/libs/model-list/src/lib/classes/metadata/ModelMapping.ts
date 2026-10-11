@@ -51,9 +51,6 @@ export const getModelDisplayName = (
     flux_1_schnell: "Flux 1 Schnell",
     flux_pro_1p1: "Flux Pro 1.1",
     flux_pro_1p1_ultra: "Flux Pro 1.1 Ultra",
-    flux_pro_kontext_max: "Flux Pro Kontext Max",
-    flux_dev_juggernaut: "Flux Dev Juggernaut",
-    flux_pro_1: "Flux Pro (Inpainting)",
     flux_3: "Flux 3",
     flux_3_draft: "Flux 3 Draft",
     // Aliases (dot-normalized underscores)
@@ -66,8 +63,6 @@ export const getModelDisplayName = (
     gpt_image_2: "GPT Image 2",
     gpt_image_2p5_flare: "GPT Image 2.5 Flare",
     gpt_image_2p5_sunburst: "GPT Image 2.5 Sunburst",
-    sora_2: "Sora 2",
-    sora_2_pro: "Sora 2 Pro",
 
     // Kling — p-style IDs
     kling_1p6_pro: "Kling 1.6 Pro",
@@ -215,7 +210,6 @@ export const getProviderDisplayName = (provider: string): string => {
     fal: "FAL",
     grok: "Grok",
     midjourney: "Midjourney",
-    sora: "Sora",
     worldlabs: "World Labs",
   };
 
@@ -232,7 +226,6 @@ export const getProviderIconByName = (
     fal: ModelCreator.Fal,
     grok: ModelCreator.Grok,
     midjourney: ModelCreator.Midjourney,
-    sora: ModelCreator.OpenAi,
     worldlabs: ModelCreator.WorldLabs,
   };
   const creator = providerToCreator[provider?.toLowerCase?.() ?? ""];

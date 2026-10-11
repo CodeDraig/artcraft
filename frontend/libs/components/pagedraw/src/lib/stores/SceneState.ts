@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { encodeSceneDocument, decodeSceneDocument } from "./sceneDocument";
 import { Node, NodeType } from "../Node";
 import { ImageBundle, BaseSelectorImage } from "../types";
 import { Model3DParams } from "../utilities/render3DModel";
@@ -70,7 +71,7 @@ export type ActiveTool =
   | "shape";
 
 // Serialized shape node for history storage
-type SerializedNodeData = {
+export type SerializedNodeData = {
   id: string;
   x: number;
   y: number;
@@ -274,11 +275,7 @@ export interface SceneState {
   saveSceneToFile: () => Promise<void>;
   loadSceneFromFile: (file: File) => Promise<boolean>;
 
-  serializeSceneToString: () => Promise<string>;
-  loadSceneFromString: (jsonString: string) => boolean;
-
-  // Layer management functions (no-op normalizeZIndices kept for API compat)
-  normalizeZIndices: () => void;
+  // Layer management functions
   bringToFront: (nodeIds: string[]) => void;
   sendToBack: (nodeIds: string[]) => void;
   bringForward: (nodeIds: string[]) => void;
@@ -1056,76 +1053,11 @@ export const useSceneStore = create<SceneState>((set, get, store) => ({
   setCursorVisible: (visible: boolean) => set({ cursorVisible: visible }),
 
   // Scene save/load actions
-  exportSceneAsJson: async () => {
-    const state = get();
-
-    const fileToBase64 = (file: File): Promise<string> => {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
-    };
-
-    const processedDrawNodes = await Promise.all(
-      state.drawNodes.map(async (n) => {
-        if (n.type === "line") {
-          return JSON.parse(JSON.stringify(n));
-        }
-
-        const node = n as Node;
-        const nodeData = {
-          id: node.id,
-          x: node.x,
-          y: node.y,
-          width: node.width,
-          height: node.height,
-          fill: node.fill,
-          type: node.type,
-          stroke: node.stroke,
-          strokeWidth: node.strokeWidth,
-          draggable: node.draggable,
-          imageUrl: node.imageUrl,
-          backgroundColor: node.backgroundColor,
-          rotation: node.rotation || 0,
-          scaleX: node.scaleX || 1,
-          scaleY: node.scaleY || 1,
-          offsetX: node.offsetX || 0,
-          offsetY: node.offsetY || 0,
-          locked: node.locked || false,
-        };
-
-        if (node.imageFile && node.imageFile instanceof File) {
-          try {
-            const base64 = await fileToBase64(node.imageFile);
-            return { ...nodeData, imageDataUrl: base64 };
-          } catch (error) {
-            console.error("Failed to convert image file to base64:", error);
-          }
-        }
-
-        return nodeData;
-      }),
-    );
-
-    const sceneData = {
-      drawNodes: processedDrawNodes,
-      inpaintLineNodes: JSON.parse(JSON.stringify(state.inpaintLineNodes)),
-      brushColor: state.brushColor,
-      brushSize: state.brushSize,
-      eraserSize: state.eraserSize,
-      fillColor: state.fillColor,
-      aspectRatioType: state.aspectRatioType,
-      version: "2.0",
-    };
-
-    return JSON.stringify(sceneData, null, 2);
-  },
+  exportSceneAsJson: () => encodeSceneDocument(get()),
 
   importSceneFromJson: (jsonString: string) => {
     try {
-      const sceneData = JSON.parse(jsonString);
+      const sceneData = decodeSceneDocument(jsonString);
 
       isRestoring = true;
 
@@ -1141,7 +1073,7 @@ export const useSceneStore = create<SceneState>((set, get, store) => ({
         return new File([u8arr], filename, { type: mime });
       };
 
-      const restoredDrawNodes = (sceneData.drawNodes || []).map(
+      const restoredDrawNodes = sceneData.drawNodes.map(
         (nodeData: SerializedNodeData & { imageDataUrl?: string } | LineNode) => {
           if (nodeData.type === "line") {
             return nodeData as LineNode;
@@ -1176,13 +1108,13 @@ export const useSceneStore = create<SceneState>((set, get, store) => ({
 
       set({
         drawNodes: restoredDrawNodes,
-        inpaintLineNodes: sceneData.inpaintLineNodes || [],
+        inpaintLineNodes: sceneData.inpaintLineNodes,
         selectedNodeIds: [],
-        brushColor: sceneData.brushColor || "#000000",
-        brushSize: sceneData.brushSize || 5,
-        eraserSize: sceneData.eraserSize || 16,
-        fillColor: sceneData.fillColor || "white",
-        aspectRatioType: sceneData.aspectRatioType || AspectRatioType.NONE,
+        brushColor: sceneData.brushColor,
+        brushSize: sceneData.brushSize,
+        eraserSize: sceneData.eraserSize,
+        fillColor: sceneData.fillColor,
+        aspectRatioType: sceneData.aspectRatioType,
       });
 
       isRestoring = false;
@@ -1220,16 +1152,6 @@ export const useSceneStore = create<SceneState>((set, get, store) => ({
       return false;
     }
   },
-
-  serializeSceneToString: async (): Promise<string> => {
-    return get().exportSceneAsJson();
-  },
-  loadSceneFromString: (jsonString: string): boolean => {
-    return get().importSceneFromJson(jsonString);
-  },
-
-  // No-op: ordering is now managed by position in drawNodes array
-  normalizeZIndices: () => {},
 
   // Layer management — all O(n) operations on drawNodes array
 

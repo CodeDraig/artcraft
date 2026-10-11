@@ -97,11 +97,7 @@ pub enum RouterVideoModel {
   #[serde(rename = "happy_horse_1p0")]
   HappyHorse1p0,
 
-  #[serde(rename = "sora_2")]
-  Sora2,
 
-  #[serde(rename = "sora_2_pro")]
-  Sora2Pro,
 
   #[serde(rename = "veo_2")]
   Veo2,

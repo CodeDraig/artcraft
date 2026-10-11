@@ -39,6 +39,8 @@ use tauri::AppHandle;
 use tokens::tokens::batch_generations::BatchGenerationToken;
 use tokens::tokens::media_files::MediaFileToken;
 use tokens::tokens::prompts::PromptToken;
+use url_utils::extension::extension::Extension;
+use url_utils::extension::extract_extension_from_url::{extract_extension_from_url_str, ExtractExtensions};
 use uuid_utils::uuid::generate_random_uuid;
 
 pub async fn handle_fal_complete(
@@ -247,8 +249,9 @@ async fn download_file(
   let response = reqwest::get(url).await?;
   let bytes = response.bytes().await?;
 
-  let extension = url_utils::download_extension::extract_download_extension_from_url::extract_download_extension_from_url_str(url)
-    .map(|ext| ext.as_extension_without_period())
+  let maybe_extension = extract_extension_from_url_str(url, &ExtractExtensions::Download);
+  let extension = maybe_extension.as_ref()
+    .map(Extension::without_period)
     .unwrap_or("bin");
 
   let tempdir = app_data_root.temp_dir().path();

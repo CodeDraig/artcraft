@@ -1,3 +1,17 @@
+import { useGalleryViewOptions } from "./useGalleryViewOptions";
+import { useGalleryAudioPrompts } from "./useGalleryAudioPrompts";
+import { getRootFolderId, getFolderPath } from "./folderTree";
+import { useGalleryMarquee } from "./useGalleryMarquee";
+import type { GalleryItem } from "./GalleryItem";
+import { galleryCacheMap } from "./galleryCache";
+import { fetchCurrentUsername } from "./fetchCurrentUsername";
+import { SkeletonGrid } from "./SkeletonGrid";
+import { LazyDateGroup } from "./LazyDateGroup";
+import { TagCloudView } from "./TagCloudView";
+import { BulkThumb } from "./BulkThumb";
+import { FolderContextMenuItems } from "./FolderContextMenuItems";
+import { groupItemsByDate } from "./groupItemsByDate";
+import { mapApiItem, mapFolderListItem } from "./galleryItemMapping";
 import { Modal } from "@storyteller/ui-modal";
 import { LightboxModal } from "@storyteller/ui-lightbox-modal";
 import { Button } from "@storyteller/ui-button";
@@ -19,13 +33,10 @@ import {
   GalleryModalApi,
   MediaFilesApi,
   TagsApi,
-  UsersApi,
 } from "@storyteller/api";
 import type {
   FolderInfo,
-  FolderMediaFileListItem,
   TagDetails,
-  TagMediaFileListItem,
 } from "@storyteller/api";
 import type { GalleryFolder } from "./GalleryDraggableItem";
 import { compareFolders } from "./folderUtils";
@@ -35,7 +46,6 @@ import {
   mergeCollageUrls,
 } from "./folderMapping";
 import { promptFolderDrop } from "./promptFolderDrop";
-import { FolderColorRow } from "./FolderColorRow";
 import { FolderNameDialog } from "./FolderNameDialog";
 import { toast } from "@storyteller/ui-toaster";
 import { twMerge } from "tailwind-merge";
@@ -44,7 +54,6 @@ import { GalleryFolderChip } from "./GalleryFolderChip";
 import { useSignals } from "@preact/signals-react/runtime";
 import {
   getThumbnailUrl,
-  getMediaThumbnail,
   THUMBNAIL_SIZES,
   PLACEHOLDER_IMAGES,
   is3DModelUrl,
@@ -59,7 +68,7 @@ import {
   galleryModalLightboxNavPrev,
   galleryModalLightboxNavNext,
 } from "./galleryModalSignals";
-import galleryDnd, { FOLDER_DROP_EVENT } from "./galleryDnd";
+import { FOLDER_DROP_EVENT } from "./galleryDnd";
 import {
   BoxIcon,
   EllipsisIcon,
@@ -71,7 +80,6 @@ import {
   MaximizeIcon,
   MinimizeIcon,
   MusicIcon,
-  PencilIcon,
   PlusIcon,
   RefreshCwIcon,
   StarIcon,
@@ -82,10 +90,6 @@ import {
   XIcon,
 } from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
-import {
-  useMediaPromptTokens,
-  usePrompts,
-} from "@storyteller/ui-generation-list";
 import { SliderV2 } from "@storyteller/ui-sliderv2";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import {
@@ -93,174 +97,6 @@ import {
   isActionReminderOpen,
 } from "@storyteller/ui-action-reminder-modal";
 import { Checkbox } from "@storyteller/ui-checkbox";
-
-// ─── Module-level gallery cache ───────────────────────────────────────────────
-// Persists gallery items across modal open/close so users see content instantly.
-interface GalleryCacheEntry {
-  items: GalleryItem[];
-  pageIndex: number;
-  hasMore: boolean;
-  timestamp: number;
-  /** Keyset cursor for the mesh/splat tabs (their endpoints paginate by cursor). */
-  cursor?: string;
-}
-
-const galleryCacheMap = new Map<string, GalleryCacheEntry>();
-const usersApiSingleton = new UsersApi();
-
-/** Clear the module-level gallery item cache. Call on logout so the next user doesn't see stale items. */
-export const clearGalleryCache = () => {
-  galleryCacheMap.clear();
-};
-
-/** Fetch the current session's username fresh every time — the session may have changed (logout/login). */
-async function fetchCurrentUsername(): Promise<string | null> {
-  try {
-    const session = await usersApiSingleton.GetSession();
-    if (session.success && session.data?.user) {
-      return session.data.user.username;
-    }
-  } catch {
-    // ignore
-  }
-  return null;
-}
-
-// ─── Skeleton loader component ────────────────────────────────────────────────
-const SKELETON_COUNT = 15;
-
-const SkeletonGrid = ({ columns }: { columns: number }) => {
-  const gapClass = columns <= 4 ? "gap-2" : columns <= 7 ? "gap-2" : "gap-0.5";
-  return (
-    <div className="space-y-6 p-4 animate-in fade-in duration-200">
-      {/* Fake date heading */}
-      <div>
-        <div className="h-4 w-24 bg-white/[0.06] mb-3" />
-        <div
-          className={twMerge("grid", gapClass)}
-          style={{
-            gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`,
-          }}
-        >
-          {Array.from({ length: SKELETON_COUNT }).map((_, i) => (
-            <div key={i} className="aspect-square overflow-hidden">
-              <div
-                className="h-full w-full bg-white/[0.06]"
-                style={{
-                  animation: `pulse 1.8s ease-in-out ${i * 0.07}s infinite`,
-                }}
-              />
-            </div>
-          ))}
-        </div>
-      </div>
-      <style>{`
-        @keyframes pulse {
-          0%, 100% { opacity: 0.4; }
-          50% { opacity: 0.8; }
-        }
-      `}</style>
-    </div>
-  );
-};
-
-// ─── Lazy date-group virtualization ───────────────────────────────────────────
-// Bidirectional: mounts groups when they scroll within 800px of the viewport,
-// and unmounts them when they scroll beyond that range. Measured heights are
-// used for placeholders so scroll position stays rock-solid.
-
-export interface LazyDateGroupProps {
-  /** If true the group renders on mount (use for first N visible groups). */
-  eager: boolean;
-  /** Estimated item count for placeholder height calculation. */
-  itemCount: number;
-  /** Current grid column count, used to estimate placeholder height. */
-  gridColumns: number;
-  /** The scroll container used as IntersectionObserver root. */
-  scrollRoot: HTMLDivElement | null;
-  children: React.ReactNode;
-}
-
-export const LazyDateGroup = React.memo(
-  ({
-    eager,
-    itemCount,
-    gridColumns,
-    scrollRoot,
-    children,
-  }: LazyDateGroupProps) => {
-    const containerRef = useRef<HTMLDivElement>(null);
-    const [isNearViewport, setIsNearViewport] = useState(eager);
-    // Store the last measured height so placeholders match exactly
-    const measuredHeightRef = useRef<number | null>(null);
-
-    // Measure rendered height on every commit while visible
-    useEffect(() => {
-      if (isNearViewport && containerRef.current) {
-        measuredHeightRef.current = containerRef.current.offsetHeight;
-      }
-    });
-
-    useEffect(() => {
-      const el = containerRef.current;
-      if (!el) return;
-
-      const observer = new IntersectionObserver(
-        ([entry]) => {
-          setIsNearViewport(entry.isIntersecting);
-        },
-        {
-          root: scrollRoot,
-          rootMargin: "800px 0px", // mount/unmount buffer
-        },
-      );
-      observer.observe(el);
-      return () => observer.disconnect();
-    }, [scrollRoot]);
-
-    if (!isNearViewport) {
-      // Use measured height if available, otherwise estimate
-      const height =
-        measuredHeightRef.current ??
-        Math.ceil(itemCount / gridColumns) * 120 + 36;
-      return (
-        <div
-          ref={containerRef}
-          style={{ height, minHeight: height }}
-          aria-hidden
-        />
-      );
-    }
-
-    return <div ref={containerRef}>{children}</div>;
-  },
-);
-LazyDateGroup.displayName = "LazyDateGroup";
-
-export interface GalleryItem {
-  id: string;
-  label: string;
-  thumbnail: string | null;
-  // Thumbnail template is not a usable URL yet. It has some variables
-  // like `{WIDTH}` which must be replaced downstream.
-  thumbnailUrlTemplate?: string;
-  fullImage?: string | null;
-  createdAt: string;
-  mediaClass?: string;
-  assetType?: string;
-  isUpload?: boolean;
-  batchImageToken?: string;
-  mediaTokens?: string[];
-  imageUrls?: string[];
-  /** Prompt token, when the list endpoint returns one (used by audio tiles). */
-  promptToken?: string;
-  /** Duration for audio/video items, when known. */
-  durationMillis?: number;
-}
-
-interface GroupedItems {
-  [date: string]: GalleryItem[];
-}
 
 type ModalMode = "select" | "view";
 
@@ -347,50 +183,12 @@ const getFilterMediaClass = (filter: string) => {
       return [
         FilterMediaClasses.IMAGE,
         FilterMediaClasses.VIDEO,
-        FilterMediaClasses.DIMENSIONAL,
         FilterMediaClasses.MESH,
         FilterMediaClasses.SPLAT,
       ];
     default:
       return undefined;
   }
-};
-
-// The backend used to file all 3D media under the (now deprecated) coarse
-// "dimensional" class; new records are "mesh" or "splat". Treat all three as 3D.
-const is3DClass = (mediaClass: string | undefined | null): boolean =>
-  mediaClass === "dimensional" ||
-  mediaClass === "mesh" ||
-  mediaClass === "splat";
-
-const getLabel = (item: any) => {
-  if (!!item.maybe_title) {
-    return item.maybe_title;
-  }
-  switch (item.media_class) {
-    case "image":
-      return "Image Generation";
-    case "video":
-      return "Video Generation";
-    case "audio":
-      return "Audio Generation";
-    case "dimensional":
-    case "mesh":
-      return "3D Object Generation";
-    case "splat":
-      return "3D World Generation";
-    default:
-      return "Generation";
-  }
-};
-
-const formatDate = (date: string) => {
-  const d = new Date(date);
-  return d.toLocaleDateString("en-US", {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-  });
 };
 
 const PAGE_SIZE = 100;
@@ -401,177 +199,6 @@ const FOLDER_PAGE_SIZE = 60;
 // The sidebar shows the five most-used tags; "All tags" opens the word cloud.
 const SIDEBAR_TAG_LIMIT = 5;
 
-const hashString = (s: string): number => {
-  let h = 0;
-  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
-  return h;
-};
-
-/**
- * The all-tags browser view: a word cloud where font size and emphasis encode
- * use count, and a deterministic hash shuffle spreads big words among small
- * ones (stable order — no reflow between renders). Mirrors the webapp's
- * library Tags tab.
- */
-function TagCloudView({
-  tags,
-  onOpen,
-}: {
-  tags: TagDetails[];
-  onOpen: (tagToken: string) => void;
-}) {
-  const words = useMemo(() => {
-    const counts = tags.map((t) => t.use_count);
-    const min = Math.min(...counts);
-    const span = Math.max(1, Math.max(...counts) - min);
-    return [...tags]
-      .sort((a, b) => hashString(a.tag_token) - hashString(b.tag_token))
-      .map((tag) => ({
-        tag,
-        // sqrt compresses the top end so one mega-tag doesn't dwarf the rest.
-        weight: Math.sqrt((tag.use_count - min) / span),
-      }));
-  }, [tags]);
-
-  return (
-    <div className="flex min-h-full items-center justify-center p-8">
-      <div className="flex max-w-3xl flex-wrap items-baseline justify-center gap-x-5 gap-y-3 select-none">
-        {words.map(({ tag, weight }) => (
-          <button
-            key={tag.tag_token}
-            type="button"
-            onClick={() => onOpen(tag.tag_token)}
-            title={`${tag.use_count} file${tag.use_count === 1 ? "" : "s"}`}
-            style={{ fontSize: `${Math.round(15 + weight * 33)}px` }}
-            className={twMerge(
-              "max-w-full truncate leading-none transition-all duration-200 hover:scale-110 hover:text-violet-400",
-              hashString(tag.tag_token) % 2 === 0
-                ? "hover:rotate-2"
-                : "hover:-rotate-2",
-              weight > 0.66
-                ? "font-bold text-base-fg"
-                : weight > 0.33
-                  ? "font-semibold text-base-fg/70"
-                  : "font-medium text-base-fg/40",
-            )}
-          >
-            {tag.tag_value}
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-const SHOW_UPLOADS_STORAGE_KEY = "gallery-modal-show-uploads";
-
-/** Small thumbnail used in the bulk-selection footer bar. */
-const BulkThumb = ({
-  thumbnail,
-  placeholderIcon,
-}: {
-  thumbnail: string | null;
-  placeholderIcon: any;
-}) => {
-  const [failed, setFailed] = useState(false);
-  const showImage = !!thumbnail && !failed;
-
-  return (
-    <div className="h-8 w-8 overflow-hidden border-2 border-ui-panel bg-black/30 flex-shrink-0">
-      {showImage ? (
-        <img
-          src={thumbnail}
-          alt=""
-          className="h-full w-full object-cover"
-          onError={() => setFailed(true)}
-        />
-      ) : (
-        <div className="h-full w-full flex items-center justify-center bg-black/50">
-          <DynamicIcon
-            icon={placeholderIcon}
-            className="text-xs text-white/50"
-          />
-        </div>
-      )}
-    </div>
-  );
-};
-
-/** Reusable folder context menu (star + color + new subfolder + rename + delete). */
-const FolderContextMenuItems = ({
-  folderId,
-  hasStar,
-  colorCode,
-  onRename,
-  onDelete,
-  onNewSubfolder,
-  onToggleStar,
-  onSetColor,
-  className,
-  style,
-}: {
-  folderId: string;
-  hasStar?: boolean;
-  colorCode?: string | null;
-  onRename: (id: string) => void;
-  onDelete: (id: string) => void;
-  onNewSubfolder: (parentId: string) => void;
-  onToggleStar: (id: string, hasStar: boolean) => void;
-  onSetColor: (id: string, color: string | null) => void;
-  className?: string;
-  style?: React.CSSProperties;
-}) => (
-  <div
-    className={twMerge(
-      "min-w-44 rounded-[3px] border border-ui-panel-border bg-ui-panel p-1 shadow-xl z-[59]",
-      className,
-    )}
-    style={style}
-  >
-    <button
-      type="button"
-      className="flex w-full items-center gap-2 rounded-[3px] px-2 py-2 hover:bg-ui-controls/60 text-sm text-base-fg"
-      onClick={() => onToggleStar(folderId, !hasStar)}
-    >
-      <StarIcon
-        className={twMerge(
-          "w-4",
-          hasStar ? "text-amber-400" : "text-base-fg/40",
-        )}
-      />
-      <span>{hasStar ? "Unstar" : "Star"}</span>
-    </button>
-    <FolderColorRow
-      colorCode={colorCode}
-      onSetColor={(c) => onSetColor(folderId, c)}
-    />
-    <div className="mx-1.5 my-1 border-t border-ui-panel-border" />
-    <button
-      type="button"
-      className="flex w-full items-center gap-2 rounded-[3px] px-2 py-2 hover:bg-ui-controls/60 text-sm text-base-fg"
-      onClick={() => onNewSubfolder(folderId)}
-    >
-      <FolderPlusIcon className="w-4" />
-      <span>New subfolder</span>
-    </button>
-    <button
-      type="button"
-      className="flex w-full items-center gap-2 rounded-[3px] px-2 py-2 hover:bg-ui-controls/60 text-sm text-base-fg"
-      onClick={() => onRename(folderId)}
-    >
-      <PencilIcon className="w-4" />
-      <span>Rename</span>
-    </button>
-    <button
-      type="button"
-      className="flex w-full items-center gap-2 rounded-[3px] px-2 py-2 hover:bg-ui-controls/60 text-sm text-red"
-      onClick={() => onDelete(folderId)}
-    >
-      <Trash2Icon className="w-4" />
-      <span>Delete folder</span>
-    </button>
-  </div>
-);
 
 export const GalleryModal = React.memo(
   ({
@@ -608,47 +235,11 @@ export const GalleryModal = React.memo(
     const lightboxVisibleSignal = galleryModalLightboxVisible;
     const failedImageUrls = useRef<Set<string>>(new Set());
     const scrollContainerRef = useRef<HTMLDivElement>(null);
-    // Marquee (drag-rectangle) selection — view mode only. The rectangle is
-    // positioned imperatively (no React state per frame) and tile rects are
-    // cached at drag start; see handleMarqueePointerDown below.
-    const marqueeRef = useRef<HTMLDivElement>(null);
-    const marqueeRaf = useRef(0);
     const [username, setUsername] = useState<string>("");
     const [usernameError, setUsernameError] = useState(false);
     const [usernameRetryCount, setUsernameRetryCount] = useState(0);
     const [activeFilter, setActiveFilter] = useState(forceFilter || "all");
-    const minColumns = 3;
-    const maxColumns = 12;
-    // Default gridColumns to 5 on desktop; narrow screens are locked to 2 columns
-    const defaultGridColumns = 5;
-    const [isNarrow, setIsNarrow] = useState(
-      () => typeof window !== "undefined" && window.innerWidth < 640,
-    );
-    useEffect(() => {
-      const handler = () => setIsNarrow(window.innerWidth < 640);
-      window.addEventListener("resize", handler);
-      return () => window.removeEventListener("resize", handler);
-    }, []);
-    const [sliderValue, setSliderValue] = useState(
-      maxColumns - (defaultGridColumns - minColumns),
-    );
-    const gridColumns = isNarrow ? 2 : maxColumns - (sliderValue - minColumns);
-    const [imageFit, setImageFit] = useState<"cover" | "contain">("contain");
-    const [showUploads, setShowUploads] = useState<boolean>(() => {
-      try {
-        const stored = localStorage.getItem(SHOW_UPLOADS_STORAGE_KEY);
-        return stored === null ? false : stored === "true";
-      } catch {
-        return false;
-      }
-    });
-    useEffect(() => {
-      try {
-        localStorage.setItem(SHOW_UPLOADS_STORAGE_KEY, String(showUploads));
-      } catch {
-        // ignore
-      }
-    }, [showUploads]);
+    const { minColumns, maxColumns, sliderValue, setSliderValue, gridColumns, imageFit, setImageFit, showUploads, setShowUploads } = useGalleryViewOptions();
     const [allItems, setAllItems] = useState<GalleryItem[]>([]);
     const [pageIndex, setPageIndex] = useState(0);
     const [hasMore, setHasMore] = useState(true);
@@ -664,6 +255,9 @@ export const GalleryModal = React.memo(
       new Set(),
     );
     const bulkSelectionMode = bulkSelectedIds.size > 0;
+    const { marqueeRef, handleMarqueePointerDown } = useGalleryMarquee(
+      scrollContainerRef, bulkSelectedIds, setBulkSelectedIds,
+    );
 
     // Folders state. Folders nest via `parentId` (null = root) so the gallery
     // supports folders-inside-folders (Google-Drive style).
@@ -749,33 +343,14 @@ export const GalleryModal = React.memo(
 
     // Root ancestor of the open folder — drives the sidebar highlight (the
     // sidebar lists only root folders), guarded against parent-chain cycles.
-    const activeRootFolderId = useMemo(() => {
-      if (galleryTab !== "folders" || !activeFolderId) return null;
-      const byId = new Map(folders.map((f) => [f.id, f]));
-      const seen = new Set<string>();
-      let cursor = byId.get(activeFolderId);
-      while (cursor && cursor.parentId && !seen.has(cursor.id)) {
-        seen.add(cursor.id);
-        cursor = byId.get(cursor.parentId);
-      }
-      return cursor?.id ?? null;
-    }, [galleryTab, folders, activeFolderId]);
-
-    // Breadcrumb trail from root → active folder (inclusive), guarded against
-    // cycles so a corrupted parent chain can never loop forever.
-    const folderPath = useMemo(() => {
-      const path: { id: string; name: string }[] = [];
-      if (!activeFolderId) return path;
-      const byId = new Map(folders.map((f) => [f.id, f]));
-      const seen = new Set<string>();
-      let cursor = byId.get(activeFolderId);
-      while (cursor && !seen.has(cursor.id)) {
-        seen.add(cursor.id);
-        path.unshift({ id: cursor.id, name: cursor.name });
-        cursor = cursor.parentId ? byId.get(cursor.parentId) : undefined;
-      }
-      return path;
-    }, [folders, activeFolderId]);
+    const activeRootFolderId = useMemo(
+      () => galleryTab === "folders" ? getRootFolderId(folders, activeFolderId) : null,
+      [galleryTab, folders, activeFolderId],
+    );
+    const folderPath = useMemo(
+      () => getFolderPath(folders, activeFolderId),
+      [folders, activeFolderId],
+    );
 
     // Direct subfolder count, shown as the chip subtitle. (The lean folder-media
     // list doesn't carry a total media count, so we only surface subfolders.)
@@ -811,26 +386,6 @@ export const GalleryModal = React.memo(
 
     // Shared API-folder → UI-folder mapper (see folderMapping.ts).
     const mapFolder = mapFolderInfo;
-
-    const groupItemsByDate = useCallback((items: GalleryItem[]) => {
-      const grouped = items.reduce((acc: GroupedItems, item) => {
-        const dateKey = formatDate(item.createdAt);
-        if (!acc[dateKey]) {
-          acc[dateKey] = [];
-        }
-        acc[dateKey].push(item);
-        return acc;
-      }, {});
-
-      // Sort dates in descending order
-      return Object.fromEntries(
-        Object.entries(grouped).sort(
-          (a, b) =>
-            new Date(b[1][0].createdAt).getTime() -
-            new Date(a[1][0].createdAt).getTime(),
-        ),
-      );
-    }, []);
 
     // Memoize the grouped result so we don't recompute on every render
     const groupedItems = useMemo(
@@ -873,51 +428,7 @@ export const GalleryModal = React.memo(
     );
     const sidebarTags = sortedTags.slice(0, SIDEBAR_TAG_LIMIT);
 
-    // Audio tiles have no thumbnail, so they show their prompt text instead.
-    // Resolve it via the shared batched caches (media token → prompt token →
-    // prompt text) for audio items only; image/video walls skip the lookups.
-    const audioMediaTokensNeedingPrompt = useMemo(() => {
-      const tokens: string[] = [];
-      const collect = (item: GalleryItem) => {
-        if (item.mediaClass === "audio" && !item.promptToken) {
-          tokens.push(item.id);
-        }
-      };
-      allItems.forEach(collect);
-      activeFolderItems.forEach(collect);
-      return tokens;
-    }, [allItems, activeFolderItems]);
-    const resolvedAudioPromptTokens = useMediaPromptTokens(
-      audioMediaTokensNeedingPrompt,
-    );
-
-    const audioPromptTokens = useMemo(() => {
-      const tokens: string[] = [];
-      const collect = (item: GalleryItem) => {
-        if (item.mediaClass !== "audio") return;
-        const token =
-          item.promptToken || resolvedAudioPromptTokens.get(item.id);
-        if (token) tokens.push(token);
-      };
-      allItems.forEach(collect);
-      activeFolderItems.forEach(collect);
-      return tokens;
-    }, [allItems, activeFolderItems, resolvedAudioPromptTokens]);
-    const audioPromptsMap = usePrompts(audioPromptTokens);
-
-    const audioPromptTextFor = useCallback(
-      (item: GalleryItem): string | undefined => {
-        if (item.mediaClass !== "audio") return undefined;
-        const token =
-          item.promptToken || resolvedAudioPromptTokens.get(item.id);
-        return (
-          (token
-            ? audioPromptsMap.get(token)?.maybe_positive_prompt
-            : undefined) || undefined
-        );
-      },
-      [resolvedAudioPromptTokens, audioPromptsMap],
-    );
+    const audioPromptTextFor = useGalleryAudioPrompts(allItems, activeFolderItems);
 
     const handleImageError = useCallback((url: string) => {
       console.error(`Failed to load gallery modal image: ${url}`);
@@ -986,78 +497,6 @@ export const GalleryModal = React.memo(
     // Keyset cursors for the mesh/splat tabs (their endpoints paginate by
     // cursor rather than page index), keyed by filter id.
     const byClassCursorRef = useRef<Record<string, string | undefined>>({});
-
-    // Map raw API item to GalleryItem
-    const mapApiItem = useCallback(
-      (item: any): GalleryItem => ({
-        id: item.token,
-        label: getLabel(item),
-        thumbnail:
-          item.media_class === "audio"
-            ? null
-            : item.media_class === "video"
-              ? item.media_links.maybe_video_previews?.animated
-              : is3DClass(item.media_class)
-                ? // Prefer the modern CDN link; fall back to the deprecated
-                  // bucket URL for older responses.
-                  (item.cover_image?.maybe_links?.cdn_url ??
-                  item.cover_image?.maybe_cover_image_public_bucket_url)
-                : getThumbnailUrl(item.media_links.maybe_thumbnail_template, {
-                    width: THUMBNAIL_SIZES.MEDIUM,
-                  }),
-        thumbnailUrlTemplate: item.media_links.maybe_thumbnail_template,
-        fullImage: item.media_links.cdn_url,
-        createdAt: item.created_at,
-        mediaClass:
-          item.media_class ||
-          (item.filter_media_classes ? item.filter_media_classes[0] : "image"),
-        isUpload: item.origin_category === "upload",
-        assetType:
-          item.media_class === "dimensional" || item.media_class === "mesh"
-            ? item.maybe_animation_type ||
-              item.origin_product_category === "character" ||
-              (item.origin && item.origin.product_category === "character")
-              ? "character"
-              : "object"
-            : item.media_class === "splat"
-              ? "splat"
-              : undefined,
-        promptToken: item.maybe_prompt_token ?? undefined,
-        durationMillis: item.maybe_duration_millis ?? undefined,
-      }),
-      [],
-    );
-
-    // Map a folder/tag media-file list item → GalleryItem (same lean wire
-    // shape). The list item already carries media_links/cover, so no batch-get
-    // is needed (unlike `mapApiItem`, which reads the raw user-media list
-    // shape: origin_category / no batch token).
-    const mapFolderListItem = useCallback(
-      (item: FolderMediaFileListItem | TagMediaFileListItem): GalleryItem => ({
-        id: item.token,
-        label: getLabel(item),
-        thumbnail:
-          item.media_class === "audio"
-            ? null
-            : is3DClass(item.media_class)
-              ? (item.cover_image?.maybe_links?.cdn_url ??
-                item.cover_image?.maybe_cover_image_public_bucket_url ??
-                null)
-              : getMediaThumbnail(item.media_links, item.media_class, {
-                  size: THUMBNAIL_SIZES.MEDIUM,
-                }),
-        thumbnailUrlTemplate:
-          item.media_links?.maybe_thumbnail_template ?? undefined,
-        fullImage: item.media_links?.cdn_url ?? null,
-        createdAt: item.created_at,
-        mediaClass: item.media_class || "image",
-        isUpload: !!item.is_user_upload,
-        batchImageToken: item.maybe_batch_token ?? undefined,
-        promptToken: item.maybe_prompt_token ?? undefined,
-        durationMillis: item.maybe_duration_millis ?? undefined,
-      }),
-      [],
-    );
 
     // Stable loadItems that reads from refs — never causes cascading re-renders
     const loadItems = useCallback(
@@ -1151,11 +590,9 @@ export const GalleryModal = React.memo(
                 (item: any) =>
                   item.media_type !== FilterMediaType.SCENE_JSON &&
                   // Drop 3D-model cover screenshots the backend surfaces as
-                  // 3D-classed items (mesh/splat, or legacy pre-split
-                  // "dimensional") whose asset is actually a .png.
+                  // mesh/splat items whose asset is actually a .png.
                   !(
-                    (item.media_class === "dimensional" ||
-                      item.media_class === "mesh" ||
+                    (item.media_class === "mesh" ||
                       item.media_class === "splat") &&
                     !is3DModelUrl(item.media_links?.cdn_url)
                   ),
@@ -1345,216 +782,7 @@ export const GalleryModal = React.memo(
       });
     }, []);
 
-    // ── Marquee (drag) selection ──────────────────────────────────────────
-    // Dragging from blank background draws a selection rectangle; tiles it
-    // covers are added to the bulk selection (additive to whatever was
-    // selected on start). Ported from the webapp library page, scoped to the
-    // modal's scroll container. Perf-sensitive: the rectangle is positioned
-    // imperatively, tile rects are cached at drag start, and selection commits
-    // only when the covered set actually changes.
-    const handleMarqueePointerDown = useCallback(
-      (e: React.PointerEvent<HTMLDivElement>) => {
-        if (e.button !== 0 || lightboxVisibleSignal.value) return;
-        // A per-tile drag (to a folder / the canvas) is already underway —
-        // never start a marquee on top of it.
-        if (galleryDnd.getDragState().isDragging) return;
 
-        const target = e.target as HTMLElement;
-        // Start only on blank background — never from tiles, folder cards,
-        // controls, or opted-out chrome.
-        if (
-          target.closest(
-            "[data-media-id], [data-folder-id], button, a, input, [data-no-marquee]",
-          )
-        ) {
-          return;
-        }
-        const scroller = scrollContainerRef.current;
-        if (!scroller) return;
-
-        // Blank-background press: suppress the browser's native text-selection
-        // default so it can't hijack the marquee drag.
-        e.preventDefault();
-
-        const startX = e.clientX;
-        const startY = e.clientY;
-        // No marquee on touch — a finger drag should scroll. A still tap on
-        // blank space still clears the selection below.
-        const isTouch = e.pointerType !== "mouse";
-        const base = new Set(bulkSelectedIds);
-        let applied = base;
-        let active = false;
-
-        const readScrollTop = () => scroller.scrollTop;
-        const readScrollLeft = () => scroller.scrollLeft;
-        const startScrollTop = readScrollTop();
-        const startScrollLeft = readScrollLeft();
-        let lastCx = startX;
-        let lastCy = startY;
-        let edgeRaf = 0;
-
-        let tiles: {
-          id: string;
-          left: number;
-          top: number;
-          right: number;
-          bottom: number;
-        }[] = [];
-        const cacheTiles = () => {
-          tiles = [];
-          scroller
-            .querySelectorAll<HTMLElement>("[data-media-id]")
-            .forEach((el) => {
-              const id = el.dataset.mediaId;
-              if (!id) return;
-              const r = el.getBoundingClientRect();
-              tiles.push({
-                id,
-                left: r.left,
-                top: r.top,
-                right: r.right,
-                bottom: r.bottom,
-              });
-            });
-        };
-        if (!isTouch) cacheTiles();
-
-        const applyMarquee = (cx: number, cy: number) => {
-          // Compensate the anchor for scrolling since drag start so the
-          // rectangle keeps growing in content space, not viewport space.
-          const ax = startX - (readScrollLeft() - startScrollLeft);
-          const ay = startY - (readScrollTop() - startScrollTop);
-          const left = Math.min(ax, cx);
-          const top = Math.min(ay, cy);
-          const width = Math.abs(cx - ax);
-          const height = Math.abs(cy - ay);
-          const right = left + width;
-          const bottom = top + height;
-          const box = marqueeRef.current;
-          if (box) {
-            // Clamp the *visible* rectangle to the scroll viewport so it never
-            // paints over the modal header / sidebar. Selection math below
-            // uses the unclamped rect, so tiles scrolled out of view stay
-            // selected.
-            const vr = scroller.getBoundingClientRect();
-            const dispLeft = Math.max(left, vr.left);
-            const dispRight = Math.min(right, vr.right);
-            const dispTop = Math.max(top, vr.top);
-            const dispBottom = Math.min(bottom, vr.bottom);
-            box.style.display = "block";
-            box.style.left = `${dispLeft}px`;
-            box.style.top = `${dispTop}px`;
-            box.style.width = `${Math.max(0, dispRight - dispLeft)}px`;
-            box.style.height = `${Math.max(0, dispBottom - dispTop)}px`;
-          }
-          const mounted = new Set(tiles.map((t) => t.id));
-          const next = new Set(base);
-          // Tiles swept over earlier may have unmounted (virtualized list)
-          // once scrolled far away — keep them selected.
-          for (const id of applied) {
-            if (!base.has(id) && !mounted.has(id)) next.add(id);
-          }
-          for (const t of tiles) {
-            if (
-              t.left < right &&
-              t.right > left &&
-              t.top < bottom &&
-              t.bottom > top
-            ) {
-              next.add(t.id);
-            }
-          }
-          // Commit only when coverage changed — most frames it hasn't.
-          let changed = next.size !== applied.size;
-          if (!changed) {
-            for (const id of next) {
-              if (!applied.has(id)) {
-                changed = true;
-                break;
-              }
-            }
-          }
-          if (changed) {
-            applied = next;
-            setBulkSelectedIds(next);
-          }
-        };
-
-        // Auto-scroll while the cursor sits within EDGE px of the scroller's
-        // top or bottom; speed ramps up nearer the edge. Self-perpetuating
-        // via rAF until the cursor leaves the zone or the drag ends.
-        const EDGE = 64;
-        const MAX_SPEED = 24;
-        const autoScrollTick = () => {
-          edgeRaf = 0;
-          if (!active || isTouch) return;
-          const r = scroller.getBoundingClientRect();
-          let dy = 0;
-          if (lastCy < r.top + EDGE) {
-            dy = -Math.min(MAX_SPEED, Math.ceil((r.top + EDGE - lastCy) / 3));
-          } else if (lastCy > r.bottom - EDGE) {
-            dy = Math.min(
-              MAX_SPEED,
-              Math.ceil((lastCy - (r.bottom - EDGE)) / 3),
-            );
-          }
-          if (dy === 0) return;
-          scroller.scrollTop += dy;
-          cacheTiles();
-          applyMarquee(lastCx, lastCy);
-          edgeRaf = requestAnimationFrame(autoScrollTick);
-        };
-        const ensureAutoScroll = () => {
-          if (!edgeRaf) edgeRaf = requestAnimationFrame(autoScrollTick);
-        };
-
-        const handleMove = (ev: PointerEvent) => {
-          if (isTouch) return;
-          if (!active) {
-            // Small threshold so plain background clicks don't flash a marquee.
-            if (
-              Math.abs(ev.clientX - startX) < 5 &&
-              Math.abs(ev.clientY - startY) < 5
-            ) {
-              return;
-            }
-            active = true;
-            document.body.style.userSelect = "none";
-          }
-          lastCx = ev.clientX;
-          lastCy = ev.clientY;
-          ensureAutoScroll();
-          cancelAnimationFrame(marqueeRaf.current);
-          marqueeRaf.current = requestAnimationFrame(() =>
-            applyMarquee(ev.clientX, ev.clientY),
-          );
-        };
-        const handleScroll = () => {
-          if (active && !isTouch) {
-            cacheTiles();
-            applyMarquee(lastCx, lastCy);
-          }
-        };
-        const handleUp = () => {
-          window.removeEventListener("pointermove", handleMove);
-          window.removeEventListener("pointerup", handleUp);
-          window.removeEventListener("scroll", handleScroll, true);
-          cancelAnimationFrame(marqueeRaf.current);
-          cancelAnimationFrame(edgeRaf);
-          document.body.style.userSelect = "";
-          if (marqueeRef.current) marqueeRef.current.style.display = "none";
-          // Plain click on blank background (no marquee drawn) clears the
-          // selection, like clicking the desktop on an OS.
-          if (!active) {
-            setBulkSelectedIds(new Set());
-          }
-        };
-        window.addEventListener("pointermove", handleMove);
-        window.addEventListener("pointerup", handleUp);
-        window.addEventListener("scroll", handleScroll, true);
-      },
-      [bulkSelectedIds, lightboxVisibleSignal],
-    );
 
     const handleItemClick = useCallback(
       (item: GalleryItem) => {
@@ -3533,8 +2761,7 @@ export const GalleryModal = React.memo(
                           ? VideoIcon
                           : si.mediaClass === "audio"
                             ? MusicIcon
-                            : si.mediaClass === "dimensional" ||
-                                si.mediaClass === "mesh" ||
+                            : si.mediaClass === "mesh" ||
                                 si.mediaClass === "splat"
                               ? BoxIcon
                               : ImageIcon;

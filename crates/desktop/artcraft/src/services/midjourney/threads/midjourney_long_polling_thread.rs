@@ -244,7 +244,7 @@ mod tests {
         let files = list_batch_generated_redux_media_files(&config.storyteller_host, Some(&storyteller_credentials), batch).await?;
         assert_eq!(files.media_files.len(), 4, "all four results must be uploaded");
         assert!(task.on_complete_primary_media_file_cdn_url.is_some());
-        assert_eq!(task.provider, Some(GenerationProvider::Midjourney));
+        assert_eq!(task.provider.as_deref(), Some(GenerationProvider::Midjourney.to_str()));
         let job_id = task.provider_job_id.as_deref().unwrap();
         // Independently exercise the recovery feed even when websocket won.
         let feed = imagine(ImagineArgs { request: ImagineRequest { user_id: &session.user_id, page_size: None }, cookie_header: &session.cookie_header, hostname: None, browser: Some(session.browser.clone()) }).await?;

@@ -1,3 +1,4 @@
+import type { PromptResolution } from "./promptResolution";
 import { useState, useRef, useEffect } from "react";
 import { useSignals } from "@preact/signals-react/runtime";
 import { PopoverMenu, PopoverItem } from "@storyteller/ui-popover";
@@ -8,13 +9,12 @@ import { ChevronDownIcon, ChevronUpIcon, FrameIcon, MaximizeIcon, RectangleHoriz
 import type { LucideIcon } from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
 
-import {
-  Prompt2DStore,
-  RefImage,
-  useEnterToGenerateStore,
-} from "./promptStore";
+import { Prompt2DStore } from "./prompt2DStore";
+import { RefImage } from "./promptMedia";
+import { useEnterToGenerateStore } from "./enterToGenerateStore";
 import { ImageModel } from "@storyteller/model-list";
-import { ImagePromptRow, UploadImageFn } from "./ImagePromptRow";
+import { ImagePromptRow } from "./ImagePromptRow";
+import type { UploadMediaFn } from "@storyteller/api";
 import { twMerge } from "tailwind-merge";
 import { GenerationProvider } from "@storyteller/api-enums";
 import { GenerationCountPicker } from "./common/GenerationCountPicker";
@@ -30,7 +30,7 @@ import { toast } from "@storyteller/ui-toaster";
 export type AspectRatio = "wide" | "tall" | "square";
 
 export interface PromptBox2DProps {
-  uploadImage?: UploadImageFn;
+  uploadImage?: UploadMediaFn;
   selectedImageModel?: ImageModel;
   selectedProvider?: GenerationProvider;
   EncodeImageBitmapToBase64: (imageBitmap: ImageBitmap) => Promise<string>;
@@ -126,17 +126,20 @@ export const PromptBox2D = ({
   const [resolutionList, setResolutionList] = useState<PopoverItem[]>([
     {
       label: "1K",
-      selected: resolution === "1k",
+      action: "one_k",
+      selected: resolution === "one_k",
       icon: <MaximizeIcon  className="h-4 w-4" />,
     },
     {
       label: "2K",
-      selected: resolution === "2k",
+      action: "two_k",
+      selected: resolution === "two_k",
       icon: <MaximizeIcon  className="h-4 w-4" />,
     },
     {
       label: "4K",
-      selected: resolution === "4k",
+      action: "four_k",
+      selected: resolution === "four_k",
       icon: <MaximizeIcon  className="h-4 w-4" />,
     },
   ]);
@@ -153,7 +156,7 @@ export const PromptBox2D = ({
     setResolutionList((prev) =>
       prev.map((item) => ({
         ...item,
-        selected: item.label.toLowerCase() === resolution,
+        selected: item.action === resolution,
       })),
     );
   }, [resolution]);
@@ -185,7 +188,7 @@ export const PromptBox2D = ({
   };
 
   const handleResolutionSelect = (selectedItem: PopoverItem) => {
-    setResolution(selectedItem.label.toLowerCase() as any);
+    setResolution(selectedItem.action as PromptResolution);
   };
 
   // Image prompt row replaces legacy upload/gallery UI

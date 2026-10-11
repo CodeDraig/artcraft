@@ -36,16 +36,10 @@ pub enum CommonModelType {
   Flux1Dev,
   #[serde(rename = "flux_1_schnell")]
   Flux1Schnell,
-  #[serde(rename = "flux_dev_juggernaut")]
-  FluxDevJuggernaut,
-  #[serde(rename = "flux_pro_1")]
-  FluxPro1,
   #[serde(rename = "flux_pro_1p1")]
   FluxPro11,
   #[serde(rename = "flux_pro_1p1_ultra")]
   FluxPro11Ultra,
-  #[serde(rename = "flux_pro_kontext_max")]
-  FluxProKontextMax,
   #[serde(rename = "flux_2_lora_angles")]
   Flux2LoraAngles,
   #[serde(rename = "gpt_image_1")]
@@ -211,10 +205,6 @@ pub enum CommonModelType {
   Seedance2p5,
   #[serde(rename = "seedance_2p5_u")]
   Seedance2p5Ultra,
-  #[serde(rename = "sora_2")]
-  Sora2,
-  #[serde(rename = "sora_2_pro")]
-  Sora2Pro,
   #[serde(rename = "veo_2")]
   Veo2,
   #[serde(rename = "veo_3")]
@@ -302,11 +292,8 @@ impl CommonModelType {
       // Image models
       Self::Flux1Dev => "flux_1_dev",
       Self::Flux1Schnell => "flux_1_schnell",
-      Self::FluxDevJuggernaut => "flux_dev_juggernaut",
-      Self::FluxPro1 => "flux_pro_1",
       Self::FluxPro11 => "flux_pro_1p1",
       Self::FluxPro11Ultra => "flux_pro_1p1_ultra",
-      Self::FluxProKontextMax => "flux_pro_kontext_max",
       Self::Flux2LoraAngles => "flux_2_lora_angles",
       Self::GptImage1 => "gpt_image_1",
       Self::GptImage1p5 => "gpt_image_1p5",
@@ -377,8 +364,6 @@ impl CommonModelType {
       Self::Seedance2p5Preview => "seedance_2p5_preview",
       Self::Seedance2p5 => "seedance_2p5",
       Self::Seedance2p5Ultra => "seedance_2p5_u",
-      Self::Sora2 => "sora_2",
-      Self::Sora2Pro => "sora_2_pro",
       Self::Veo2 => "veo_2",
       Self::Veo3 => "veo_3",
       Self::Veo3Fast => "veo_3_fast",
@@ -427,11 +412,8 @@ impl CommonModelType {
       // Image models
       "flux_1_dev" => Ok(Self::Flux1Dev),
       "flux_1_schnell" => Ok(Self::Flux1Schnell),
-      "flux_dev_juggernaut" => Ok(Self::FluxDevJuggernaut),
-      "flux_pro_1" => Ok(Self::FluxPro1),
       "flux_pro_1p1" => Ok(Self::FluxPro11),
       "flux_pro_1p1_ultra" => Ok(Self::FluxPro11Ultra),
-      "flux_pro_kontext_max" => Ok(Self::FluxProKontextMax),
       "flux_2_lora_angles" => Ok(Self::Flux2LoraAngles),
       "gpt_image_1" => Ok(Self::GptImage1),
       "gpt_image_1p5" => Ok(Self::GptImage1p5),
@@ -502,8 +484,6 @@ impl CommonModelType {
       "seedance_2p5_preview" => Ok(Self::Seedance2p5Preview),
       "seedance_2p5" => Ok(Self::Seedance2p5),
       "seedance_2p5_u" => Ok(Self::Seedance2p5Ultra),
-      "sora_2" => Ok(Self::Sora2),
-      "sora_2_pro" => Ok(Self::Sora2Pro),
       "veo_2" => Ok(Self::Veo2),
       "veo_3" => Ok(Self::Veo3),
       "veo_3_fast" => Ok(Self::Veo3Fast),
@@ -556,11 +536,8 @@ impl CommonModelType {
       // Image models
       Self::Flux1Dev,
       Self::Flux1Schnell,
-      Self::FluxDevJuggernaut,
-      Self::FluxPro1,
       Self::FluxPro11,
       Self::FluxPro11Ultra,
-      Self::FluxProKontextMax,
       Self::Flux2LoraAngles,
       Self::GptImage1,
       Self::GptImage1p5,
@@ -631,8 +608,6 @@ impl CommonModelType {
       Self::Seedance2p5Preview,
       Self::Seedance2p5,
       Self::Seedance2p5Ultra,
-      Self::Sora2,
-      Self::Sora2Pro,
       Self::Veo2,
       Self::Veo3,
       Self::Veo3Fast,
@@ -682,11 +657,8 @@ impl CommonModelType {
       // Image models
       Self::Flux1Dev => CommonModelClass::Image,
       Self::Flux1Schnell => CommonModelClass::Image,
-      Self::FluxDevJuggernaut => CommonModelClass::Image,
-      Self::FluxPro1 => CommonModelClass::Image,
       Self::FluxPro11 => CommonModelClass::Image,
       Self::FluxPro11Ultra => CommonModelClass::Image,
-      Self::FluxProKontextMax => CommonModelClass::Image,
       Self::Flux2LoraAngles => CommonModelClass::Image,
       Self::GptImage1 => CommonModelClass::Image,
       Self::GptImage1p5 => CommonModelClass::Image,
@@ -757,8 +729,6 @@ impl CommonModelType {
       Self::Seedance2p5Preview => CommonModelClass::Video,
       Self::Seedance2p5 => CommonModelClass::Video,
       Self::Seedance2p5Ultra => CommonModelClass::Video,
-      Self::Sora2 => CommonModelClass::Video,
-      Self::Sora2Pro => CommonModelClass::Video,
       Self::Veo2 => CommonModelClass::Video,
       Self::Veo3 => CommonModelClass::Video,
       Self::Veo3Fast => CommonModelClass::Video,
@@ -818,11 +788,8 @@ mod tests {
       // Image models
       assert_serialization(CommonModelType::Flux1Dev, "flux_1_dev");
       assert_serialization(CommonModelType::Flux1Schnell, "flux_1_schnell");
-      assert_serialization(CommonModelType::FluxDevJuggernaut, "flux_dev_juggernaut");
-      assert_serialization(CommonModelType::FluxPro1, "flux_pro_1");
       assert_serialization(CommonModelType::FluxPro11, "flux_pro_1p1");
       assert_serialization(CommonModelType::FluxPro11Ultra, "flux_pro_1p1_ultra");
-      assert_serialization(CommonModelType::FluxProKontextMax, "flux_pro_kontext_max");
       assert_serialization(CommonModelType::Flux2LoraAngles, "flux_2_lora_angles");
       assert_serialization(CommonModelType::GptImage1, "gpt_image_1");
       assert_serialization(CommonModelType::GptImage1p5, "gpt_image_1p5");
@@ -892,8 +859,6 @@ mod tests {
       assert_serialization(CommonModelType::Seedance2p5Preview, "seedance_2p5_preview");
       assert_serialization(CommonModelType::Seedance2p5, "seedance_2p5");
       assert_serialization(CommonModelType::Seedance2p5Ultra, "seedance_2p5_u");
-      assert_serialization(CommonModelType::Sora2, "sora_2");
-      assert_serialization(CommonModelType::Sora2Pro, "sora_2_pro");
       assert_serialization(CommonModelType::Veo2, "veo_2");
       assert_serialization(CommonModelType::Veo3, "veo_3");
       assert_serialization(CommonModelType::Veo3Fast, "veo_3_fast");
@@ -937,11 +902,8 @@ mod tests {
       // Image models
       assert_eq!(CommonModelType::Flux1Dev.to_str(), "flux_1_dev");
       assert_eq!(CommonModelType::Flux1Schnell.to_str(), "flux_1_schnell");
-      assert_eq!(CommonModelType::FluxDevJuggernaut.to_str(), "flux_dev_juggernaut");
-      assert_eq!(CommonModelType::FluxPro1.to_str(), "flux_pro_1");
       assert_eq!(CommonModelType::FluxPro11.to_str(), "flux_pro_1p1");
       assert_eq!(CommonModelType::FluxPro11Ultra.to_str(), "flux_pro_1p1_ultra");
-      assert_eq!(CommonModelType::FluxProKontextMax.to_str(), "flux_pro_kontext_max");
       assert_eq!(CommonModelType::Flux2LoraAngles.to_str(), "flux_2_lora_angles");
       assert_eq!(CommonModelType::GptImage1.to_str(), "gpt_image_1");
       assert_eq!(CommonModelType::GptImage1p5.to_str(), "gpt_image_1p5");
@@ -1012,8 +974,6 @@ mod tests {
       assert_eq!(CommonModelType::Seedance2p5Preview.to_str(), "seedance_2p5_preview");
       assert_eq!(CommonModelType::Seedance2p5.to_str(), "seedance_2p5");
       assert_eq!(CommonModelType::Seedance2p5Ultra.to_str(), "seedance_2p5_u");
-      assert_eq!(CommonModelType::Sora2.to_str(), "sora_2");
-      assert_eq!(CommonModelType::Sora2Pro.to_str(), "sora_2_pro");
       assert_eq!(CommonModelType::Veo2.to_str(), "veo_2");
       assert_eq!(CommonModelType::Veo3.to_str(), "veo_3");
       assert_eq!(CommonModelType::Veo3Fast.to_str(), "veo_3_fast");
@@ -1060,11 +1020,8 @@ mod tests {
       // Image models
       assert_eq!(CommonModelType::from_str("flux_1_dev").unwrap(), CommonModelType::Flux1Dev);
       assert_eq!(CommonModelType::from_str("flux_1_schnell").unwrap(), CommonModelType::Flux1Schnell);
-      assert_eq!(CommonModelType::from_str("flux_dev_juggernaut").unwrap(), CommonModelType::FluxDevJuggernaut);
-      assert_eq!(CommonModelType::from_str("flux_pro_1").unwrap(), CommonModelType::FluxPro1);
       assert_eq!(CommonModelType::from_str("flux_pro_1p1").unwrap(), CommonModelType::FluxPro11);
       assert_eq!(CommonModelType::from_str("flux_pro_1p1_ultra").unwrap(), CommonModelType::FluxPro11Ultra);
-      assert_eq!(CommonModelType::from_str("flux_pro_kontext_max").unwrap(), CommonModelType::FluxProKontextMax);
       assert_eq!(CommonModelType::from_str("flux_2_lora_angles").unwrap(), CommonModelType::Flux2LoraAngles);
       assert_eq!(CommonModelType::from_str("gpt_image_1").unwrap(), CommonModelType::GptImage1);
       assert_eq!(CommonModelType::from_str("gpt_image_1p5").unwrap(), CommonModelType::GptImage1p5);
@@ -1134,8 +1091,6 @@ mod tests {
       assert_eq!(CommonModelType::from_str("seedance_2p5_preview").unwrap(), CommonModelType::Seedance2p5Preview);
       assert_eq!(CommonModelType::from_str("seedance_2p5").unwrap(), CommonModelType::Seedance2p5);
       assert_eq!(CommonModelType::from_str("seedance_2p5_u").unwrap(), CommonModelType::Seedance2p5Ultra);
-      assert_eq!(CommonModelType::from_str("sora_2").unwrap(), CommonModelType::Sora2);
-      assert_eq!(CommonModelType::from_str("sora_2_pro").unwrap(), CommonModelType::Sora2Pro);
       assert_eq!(CommonModelType::from_str("veo_2").unwrap(), CommonModelType::Veo2);
       assert_eq!(CommonModelType::from_str("veo_3").unwrap(), CommonModelType::Veo3);
       assert_eq!(CommonModelType::from_str("veo_3_fast").unwrap(), CommonModelType::Veo3Fast);
@@ -1178,15 +1133,12 @@ mod tests {
     #[test]
     fn all_variants() {
       let mut variants = CommonModelType::all_variants();
-      assert_eq!(variants.len(), 110);
+      assert_eq!(variants.len(), 105);
       // Image models
       assert_eq!(variants.pop_first(), Some(CommonModelType::Flux1Dev));
       assert_eq!(variants.pop_first(), Some(CommonModelType::Flux1Schnell));
-      assert_eq!(variants.pop_first(), Some(CommonModelType::FluxDevJuggernaut));
-      assert_eq!(variants.pop_first(), Some(CommonModelType::FluxPro1));
       assert_eq!(variants.pop_first(), Some(CommonModelType::FluxPro11));
       assert_eq!(variants.pop_first(), Some(CommonModelType::FluxPro11Ultra));
-      assert_eq!(variants.pop_first(), Some(CommonModelType::FluxProKontextMax));
       assert_eq!(variants.pop_first(), Some(CommonModelType::Flux2LoraAngles));
       assert_eq!(variants.pop_first(), Some(CommonModelType::GptImage1));
       assert_eq!(variants.pop_first(), Some(CommonModelType::GptImage1p5));
@@ -1256,8 +1208,6 @@ mod tests {
       assert_eq!(variants.pop_first(), Some(CommonModelType::Seedance2p5Preview));
       assert_eq!(variants.pop_first(), Some(CommonModelType::Seedance2p5));
       assert_eq!(variants.pop_first(), Some(CommonModelType::Seedance2p5Ultra));
-      assert_eq!(variants.pop_first(), Some(CommonModelType::Sora2));
-      assert_eq!(variants.pop_first(), Some(CommonModelType::Sora2Pro));
       assert_eq!(variants.pop_first(), Some(CommonModelType::Veo2));
       assert_eq!(variants.pop_first(), Some(CommonModelType::Veo3));
       assert_eq!(variants.pop_first(), Some(CommonModelType::Veo3Fast));
@@ -1373,7 +1323,6 @@ mod tests {
     #[test]
     fn video_models_return_video_class() {
       assert_eq!(CommonModelType::Veo3.get_model_class(), CommonModelClass::Video);
-      assert_eq!(CommonModelType::Sora2.get_model_class(), CommonModelClass::Video);
       assert_eq!(CommonModelType::Kling3p0Pro.get_model_class(), CommonModelClass::Video);
       assert_eq!(CommonModelType::Seedance2p0Mini.get_model_class(), CommonModelClass::Video);
       assert_eq!(CommonModelType::Seedance2p0BytePlusMini.get_model_class(), CommonModelClass::Video);

@@ -12,7 +12,7 @@ import {
   EnqueueImageBgRemoval,
   useCanvasBgRemovedEvent,
 } from "@storyteller/tauri-api";
-import { CommonAspectRatio, CommonResolution } from "@storyteller/model-list";
+import { CommonAspectRatio } from "@storyteller/model-list";
 import { useTextToImageGenerationCompleteEvent } from "@storyteller/tauri-events";
 import { UploadImageMedia } from "@storyteller/api";
 import { BaseImageSelector } from "./BaseImageSelector";
@@ -25,15 +25,6 @@ const mapAspectRatio = (ratio?: string): CommonAspectRatio | undefined => {
     case "tall":   return CommonAspectRatio.Tall;
     case "square": return CommonAspectRatio.Square;
     default:       return undefined;
-  }
-};
-
-const mapResolution = (res?: string): CommonResolution | undefined => {
-  switch (res) {
-    case "1k": return CommonResolution.OneK;
-    case "2k": return CommonResolution.TwoK;
-    case "4k": return CommonResolution.FourK;
-    default:   return undefined;
   }
 };
 
@@ -106,7 +97,7 @@ const useTauriAdapter = (): PageDrawAdapter => {
               : undefined,
           batch_size: req.imageCount,
           aspect_ratio: mapAspectRatio(req.aspectRatio),
-          resolution: mapResolution(req.imageResolution),
+          resolution: req.imageResolution,
           frontend_caller: req.frontendCaller,
           frontend_subscriber_id: req.frontendSubscriberId,
         };

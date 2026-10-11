@@ -9,7 +9,7 @@ import {
   Trash2Icon,
   UserIcon,
 } from "lucide-react";
-import type { MentionItem } from "./MentionTextarea";
+import type { MentionItem } from "./MentionItem";
 
 const VIEWPORT_MARGIN = 8;
 const ANCHOR_GAP = 4;

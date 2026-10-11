@@ -40,7 +40,7 @@ export function ProviderSelector({
   const allowedProviders: GenerationProvider[] = useMemo(() => {
     if (!modelId) return DEFAULT_PROVIDER_OPTIONS;
     const providers = (providersByModel?.[modelId] ?? model?.getProviders() ?? DEFAULT_PROVIDER_OPTIONS)
-      .filter((provider) => provider !== GenerationProvider.Sora && provider !== GenerationProvider.WorldLabs);
+      .filter((provider) => provider !== GenerationProvider.WorldLabs);
     return providers.length > 0 ? providers : [GenerationProvider.Artcraft];
   }, [providersByModel, modelId, model]);
 

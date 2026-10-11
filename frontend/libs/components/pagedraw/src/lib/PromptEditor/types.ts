@@ -1,5 +1,4 @@
 import { ImageModel } from "@storyteller/model-list";
-import { ModelInfo } from "@storyteller/model-list";
 import { GenerationProvider } from "@storyteller/api-enums";
 
 export interface PromptEditorProps {
@@ -12,7 +11,6 @@ export interface PromptEditorProps {
   onImageStyleChange?: (images: ImageStyle[]) => void;
   onEnqueuePressed?: () => void;
   onFitPressed?: () => void;
-  selectedModelInfo?: ModelInfo;
   selectedImageModel?: ImageModel;
   selectedProvider?: GenerationProvider;
 }

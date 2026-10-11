@@ -1,7 +1,5 @@
 use crate::core::commands::enqueue::generate_error::{BadInputReason, GenerateError};
-use crate::core::commands::deprecated::image_edit::enqueue_edit_image_command::EnqueueEditImageCommand;
-use crate::core::commands::deprecated::image_inpaint::enqueue_image_inpaint_command::EnqueueInpaintImageCommand;
-use crate::core::commands::generate::generate_video::request::{TauriGenerateVideoRequest, TauriVideoModel, GrokAspectRatio, SoraOrientation};
+use crate::core::commands::generate::generate_video::request::{TauriGenerateVideoRequest, TauriVideoModel, GrokAspectRatio};
 use crate::core::commands::enqueue::task_enqueue_success::TaskEnqueueSuccess;
 use crate::core::events::functional_events::show_provider_login_modal_event::ShowProviderLoginModalEvent;
 use crate::core::events::generation_events::common::GenerationModel;
@@ -11,9 +9,6 @@ use crate::core::state::provider_priority::{Provider, ProviderPriorityStore};
 use crate::core::utils::download_media_file_to_temp_dir::download_media_file_to_temp_dir;
 use crate::services::grok::state::grok_credential_manager::GrokCredentialManager;
 use crate::services::grok::util::upload_image_media_file_to_grok::{upload_image_media_file_to_grok, UploadImageMediaFileToGrok};
-use crate::services::sora::state::sora_credential_manager::SoraCredentialManager;
-use crate::services::sora::state::sora_task_queue::SoraTaskQueue;
-use crate::services::sora::utils::upload_images_to_sora::{upload_images_to_sora, UploadImagesToSoraArgs};
 use crate::services::storyteller::state::storyteller_credential_manager::StorytellerCredentialManager;
 use enums::common::generation_provider::GenerationProvider;
 use enums::tauri::tasks::task_type::TaskType;
@@ -25,8 +20,6 @@ use grok_consumer_client::recipes::request_client_secrets::{request_client_secre
 use grok_consumer_client::recipes::upload_image_and_generate_video::{upload_image_and_generate_video, UploadImageAndGenerateVideo};
 use grok_consumer_client::recipes::upload_image_and_generate_video_with_retry::{upload_image_and_generate_video_with_retry, UploadImageAndGenerateVideoWithRetry};
 use log::{error, info, warn};
-use openai_sora_client::recipes::generate_sora2_video::generate_sora2_video_with_session_auto_renew::generate_sora2_video_with_session_auto_renew;
-use openai_sora_client::requests::generate_sora2_video::generate_sora2_video::{GenerateSora2VideoArgs, Orientation};
 use std::time::Duration;
 use tauri::AppHandle;
 

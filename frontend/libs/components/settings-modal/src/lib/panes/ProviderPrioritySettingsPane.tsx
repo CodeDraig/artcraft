@@ -1,3 +1,4 @@
+import { GenerationProvider } from "@storyteller/api-enums";
 import { useEffect, useState, ReactNode } from "react";
 import {
   DndContext,
@@ -19,14 +20,13 @@ import { CSS } from "@dnd-kit/utilities";
 import { GripVerticalIcon, LoaderCircleIcon } from "lucide-react";
 import {
   SetProviderOrder,
-  Provider,
   GetProviderOrder,
 } from "@storyteller/tauri-api";
 import { getCreatorIcon, ModelCreator } from "@storyteller/model-list";
 import { IsDesktopApp } from "@storyteller/tauri-utils";
 
 interface ProviderItem {
-  id: Provider;
+  id: GenerationProvider;
   name: string;
 }
 
@@ -86,19 +86,17 @@ const SortableItem = ({
   );
 };
 
-const ProviderItemMap = {
-  [Provider.ArtCraft]: { id: Provider.ArtCraft, name: "ArtCraft" },
-  [Provider.Fal]: { id: Provider.Fal, name: "Fal" },
-  [Provider.Sora]: { id: Provider.Sora, name: "Sora / ChatGPT" },
+const ProviderItemMap: Partial<Record<GenerationProvider, ProviderItem>> = {
+  [GenerationProvider.Artcraft]: { id: GenerationProvider.Artcraft, name: "ArtCraft" },
+  [GenerationProvider.Fal]: { id: GenerationProvider.Fal, name: "Fal" },
 };
 
-const PROVIDER_TO_CREATOR: Partial<Record<Provider, ModelCreator>> = {
-  [Provider.ArtCraft]: ModelCreator.ArtCraft,
-  [Provider.Fal]: ModelCreator.Fal,
-  [Provider.Sora]: ModelCreator.OpenAi,
+const PROVIDER_TO_CREATOR: Partial<Record<GenerationProvider, ModelCreator>> = {
+  [GenerationProvider.Artcraft]: ModelCreator.ArtCraft,
+  [GenerationProvider.Fal]: ModelCreator.Fal,
 };
 
-const getProviderIcon = (provider: Provider): ReactNode => {
+const getProviderIcon = (provider: GenerationProvider): ReactNode => {
   const creator = PROVIDER_TO_CREATOR[provider];
   if (creator) return getCreatorIcon(creator, "h-4 w-4 icon-auto-contrast");
   return (
@@ -127,12 +125,13 @@ export const ProviderPrioritySettingsPane = () => {
 
       // Add providers from backend (in order)
       for (let provider of providers.payload.providers) {
-        items.push(ProviderItemMap[provider]);
+        const item = ProviderItemMap[provider];
+        if (item) items.push(item);
       }
 
       // Add providers not in backend (in order)
       for (const [key, value] of Object.entries(ProviderItemMap)) {
-        if (!providers.payload.providers.includes(key as Provider)) {
+        if (!providers.payload.providers.includes(key as GenerationProvider)) {
           items.push(value);
         }
       }
@@ -155,11 +154,11 @@ export const ProviderPrioritySettingsPane = () => {
       console.log("Updating provider priority on backend:", newOrder);
 
       let ordering = newOrder.map((item) => item.id);
-      console.log("Provider order:", ordering);
+      console.log("GenerationProvider order:", ordering);
 
       await SetProviderOrder({ providers: ordering });
 
-      console.log("Provider priority updated successfully");
+      console.log("GenerationProvider priority updated successfully");
     } catch (error) {
       console.error("Failed to update provider priority:", error);
     } finally {

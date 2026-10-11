@@ -13,11 +13,6 @@ import {
   isEstimateImageCostSuccess,
 } from "@storyteller/tauri-api";
 import { useCostBreakdownModalStore } from "./cost-breakdown-modal-store";
-import {
-  imageAspectRatioToCommonAspectRatio,
-  stringToCommonQuality,
-  stringToCommonVideoResolution,
-} from "./convert/index.js";
 
 const IMAGE_PAGES = new Set<ModelPage>([
   ModelPage.TextToImage,
@@ -67,7 +62,6 @@ export function useImageCostEstimate(
 
     const imageModel = selectedModel as ImageModel;
     let aspectRatioStr: string | undefined;
-    let legacyAspectRatioStr: string | undefined;
     let resolutionStr: string | undefined;
     let qualityStr: string | undefined;
     let referenceImageCount = 0;
@@ -84,7 +78,7 @@ export function useImageCostEstimate(
         generationCount = imageGenerationCount;
         break;
       case ModelPage.Canvas2D:
-        legacyAspectRatioStr = prompt2DAspectRatio;
+        aspectRatioStr = prompt2DAspectRatio;
         resolutionStr = prompt2DResolution;
         referenceImageCount = prompt2DReferenceImages.length + 1;
         generationCount = prompt2DGenerationCount;
@@ -95,7 +89,7 @@ export function useImageCostEstimate(
         generationCount = 1;
         break;
       case ModelPage.ImageEditor:
-        legacyAspectRatioStr = editAspectRatio;
+        aspectRatioStr = editAspectRatio;
         resolutionStr = editResolution;
         referenceImageCount = editReferenceImages.length + 1;
         generationCount = 1;
@@ -106,13 +100,6 @@ export function useImageCostEstimate(
         break;
     }
 
-    const commonAspectRatio = imageAspectRatioToCommonAspectRatio(
-      aspectRatioStr,
-      legacyAspectRatioStr,
-    );
-    const commonResolution =
-      stringToCommonVideoResolution(resolutionStr);
-    const commonQuality = stringToCommonQuality(qualityStr);
     const generationMode =
       referenceImageCount > 0
         ? { type: "image_edit" as const, count: referenceImageCount }
@@ -132,9 +119,9 @@ export function useImageCostEstimate(
       image_batch_count: generationCount,
       provider,
       generation_mode: generationMode,
-      aspect_ratio: commonAspectRatio ?? undefined,
-      resolution: commonResolution ?? undefined,
-      quality: commonQuality ?? undefined,
+      aspect_ratio: aspectRatioStr,
+      resolution: resolutionStr,
+      quality: qualityStr,
     })
       .then((result) => {
         if (cancelled) return;

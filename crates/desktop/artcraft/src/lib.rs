@@ -56,13 +56,6 @@ use crate::services::midjourney::commands::midjourney_clear_credentials_command:
 use crate::services::midjourney::commands::midjourney_get_credential_info_command::midjourney_get_credential_info_command;
 use crate::services::midjourney::commands::midjourney_open_login_command::midjourney_open_login_command;
 use crate::services::midjourney::state::midjourney_credential_manager::MidjourneyCredentialManager;
-use crate::services::sora::commands::check_sora_session_command::check_sora_session_command;
-use crate::services::sora::commands::open_sora_login_command::open_sora_login_command;
-use crate::services::sora::commands::sora_get_credential_info_command::sora_get_credential_info_command;
-use crate::services::sora::commands::sora_logout_command::sora_logout_command;
-use crate::services::sora::state::sora_credential_manager::SoraCredentialManager;
-use crate::services::sora::state::sora_task_queue::SoraTaskQueue;
-use crate::services::sora::threads::sora_task_polling::sora_task_polling_thread::sora_task_polling_thread;
 use crate::services::storyteller::commands::login_bridge::DesktopLoginBridgeState;
 use crate::services::storyteller::commands::storyteller_cancel_login_challenge_command::storyteller_cancel_login_challenge_command;
 use crate::services::storyteller::commands::storyteller_create_login_challenge_command::storyteller_create_login_challenge_command;
@@ -121,13 +114,8 @@ pub fn run() {
   let storyteller_creds_manager_2 = storyteller_creds_manager.clone();
   let storyteller_creds_manager_3 = storyteller_creds_manager.clone();
   
-  println!("Attempting to read existing sora credentials...");
-  let sora_creds_manager = SoraCredentialManager::initialize_from_disk_infallible(&app_data_root);
-  let sora_creds_manager_2 = sora_creds_manager.clone();
   
   // Other state
-  let sora_task_queue = SoraTaskQueue::new();
-  let sora_task_queue_2 = sora_task_queue.clone();
 
   let app_env_configs = AppEnvConfigs::load_from_filesystem(&app_data_root)
     .expect("AppEnvConfigs should be loaded from disk");
@@ -175,8 +163,6 @@ pub fn run() {
       let root = app_data_root_2.clone();
       let env_config = app_env_configs_2.clone();
       let storyteller_creds = storyteller_creds_manager_2.clone();
-      let sora_creds = sora_creds_manager_2.clone();
-      let sora_tasks = sora_task_queue_2.clone();
 
       tauri::async_runtime::block_on(async move {
         let result = setup_main_window(&app).await;
@@ -188,8 +174,6 @@ pub fn run() {
           artcraft_platform_info_2,
           artcraft_usage_tracker_2,
           storyteller_creds,
-          sora_creds,
-          sora_tasks,
           midjourney_creds_manager_2,
           grok_creds_manager_2,
           grok_prompt_queue_2,
@@ -215,8 +199,6 @@ pub fn run() {
     .manage(grok_creds_manager)
     .manage(grok_prompt_queue)
     .manage(midjourney_creds_manager)
-    .manage(sora_creds_manager)
-    .manage(sora_task_queue)
     .manage(storyteller_creds_manager_3)
     .manage(worldlabs_bearer_bridge)
     .manage(provider_credential_cache)
@@ -225,7 +207,6 @@ pub fn run() {
   // TODO: Break this out into another module, because RustRover/IntelliJ lags with these macros.
   //  My first attempt at naively doing this didn't work because the macros can't find their codegen'd targets.
   let builder = builder.invoke_handler(tauri::generate_handler![
-    check_sora_session_command,
     download_directory_reveal_command,
     download_media_file_command,
     download_url_command,
@@ -262,11 +243,8 @@ pub fn run() {
     midjourney_clear_credentials_command,
     midjourney_get_credential_info_command,
     midjourney_open_login_command,
-    open_sora_login_command,
     platform_info_command,
     set_provider_order_command,
-    sora_get_credential_info_command,
-    sora_logout_command,
     storyteller_get_login_session_command,
     storyteller_password_login_command,
     storyteller_password_signup_command,

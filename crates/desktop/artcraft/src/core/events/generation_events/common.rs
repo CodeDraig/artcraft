@@ -7,7 +7,6 @@ pub enum GenerationServiceProvider {
   Fal,
   Grok,
   Midjourney,
-  Sora,
   WorldLabs,
   Higgsfield,
   Krea,
@@ -26,17 +25,11 @@ pub enum GenerationModel {
   Flux1Dev,
   #[serde(rename = "flux_1_schnell")]
   Flux1Schnell,
-  #[serde(rename = "flux_dev_juggernaut")]
-  FluxDevJuggernaut,
-  #[serde(rename = "flux_pro_1")]
-  FluxPro1,
   #[serde(rename = "flux_pro_1.1")]
   FluxPro11,
   #[serde(rename = "flux_pro_1.1_ultra")]
   FluxPro11Ultra,
   
-  #[serde(rename = "flux_pro_kontext_max")]
-  FluxProKontextMax,
   #[serde(rename = "gpt_image_1")]
   GptImage1,
   #[serde(rename = "gpt_image_1p5")]
@@ -119,12 +112,6 @@ pub enum GenerationModel {
   HappyHorse1p0,
   #[serde(rename = "recraft_3")]
   Recraft3,
-  #[serde(rename = "sora")]
-  Sora,
-  #[serde(rename = "sora_2")]
-  Sora2,
-  #[serde(rename = "sora_2_pro")]
-  Sora2Pro,
   #[serde(rename = "seedance_1.0_lite")]
   Seedance10Lite,
   #[serde(rename = "seedance_1p5_pro")]

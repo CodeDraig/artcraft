@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { useSignals } from "@preact/signals-react/runtime";
-import { JobContextType } from "@storyteller/common";
+import { JobContextType, formatResolution } from "@storyteller/common";
 import { PopoverMenu, PopoverItem } from "@storyteller/ui-popover";
 import { SliderV2 } from "@storyteller/ui-sliderv2";
 import { Tooltip } from "@storyteller/ui-tooltip";
@@ -19,22 +19,17 @@ import {
   resolveVideoOutputFormat,
   videoGenerationCounts,
   videoDurationRange,
-  videoResolutionValue,
   effectivePromptMaxLength,
   SizeIconOption,
   SizeOption,
   VideoModel,
 } from "@storyteller/model-list";
-import {
-  usePromptVideoStore,
-  RefImage,
-  VideoInputMode,
-  useCharactersStore,
-  StoredCharacter,
-  useEnterToGenerateStore,
-} from "./promptStore";
+import { usePromptVideoStore, VideoInputMode } from "./promptVideoStore";
+import { RefImage } from "./promptMedia";
+import { useCharactersStore, StoredCharacter } from "./charactersStore";
+import { useEnterToGenerateStore } from "./enterToGenerateStore";
 import { gtagEvent } from "@storyteller/google-analytics";
-import type { UploadImageFn } from "./ImagePromptRow";
+import type { UploadMediaFn } from "@storyteller/api";
 import { ReferenceDeck } from "./deck/ReferenceDeck";
 import { KeyframeCards } from "./deck/KeyframeCards";
 import { useDeckMedia } from "./deck/useDeckMedia";
@@ -52,7 +47,7 @@ import { GenerationProvider } from "@storyteller/api-enums";
 import { CharactersModal } from "./CharactersModal";
 import { CharactersApi } from "@storyteller/api";
 import { MentionTextarea } from "./MentionTextarea";
-import type { MentionItem } from "./MentionTextarea";
+import type { MentionItem } from "./MentionItem";
 import {
   PromptFullscreenModal,
   useFullscreenPrompt,
@@ -100,9 +95,9 @@ interface PromptBoxVideoProps {
   imageMediaId?: string;
   url?: string;
   onImageRowVisibilityChange?: (visible: boolean) => void;
-  uploadImage?: UploadImageFn;
-  uploadVideo?: UploadImageFn;
-  uploadAudio?: UploadImageFn;
+  uploadImage?: UploadMediaFn;
+  uploadVideo?: UploadMediaFn;
+  uploadAudio?: UploadMediaFn;
   credits?: number | null;
   /** Optional model-picker slot rendered at the start of the toolbar
    *  (left of the aspect-ratio picker). */
@@ -437,13 +432,14 @@ export const PromptBoxVideo = ({
   const resolutionPickerOptions: PopoverItem[] | null =
     selectedModel?.resolutionOptions
       ? selectedModel.resolutionOptions.map((r) => ({
-          label: r,
+          label: formatResolution(r),
+          action: r,
           selected: r === resolution,
         }))
       : null;
 
   const handleResolutionSelect = (selectedItem: PopoverItem) => {
-    setResolution(selectedItem.label);
+    setResolution(selectedItem.action as string);
   };
 
   const inputModeOptions: PopoverItem[] | null =
@@ -1170,19 +1166,14 @@ export const PromptBoxVideo = ({
       // Guarded on `resolutionOptions` so a stale store value (left over from a
       // model that did support resolution) isn't sent for one that doesn't.
       if (selectedModel.resolutionOptions?.length) {
-        request.resolution = videoResolutionValue(resolution);
+        request.resolution = resolution;
       }
 
       switch (selectedModel?.tauriId) {
-        case "grok_video": // Legacy id
         case "grok_imagine_video":
           request.grok_aspect_ratio = getGrokAspectRatio();
           break;
 
-        case "sora_2":
-          request.sora_orientation =
-            resolution === "720p" ? "landscape" : "portrait";
-          break;
       }
 
       if (selectedModel.supportsCommonAspectRatio) {

@@ -38,8 +38,6 @@ const MODEL_DESCRIPTIONS: Record<string, string> = {
   seedance_1p0_lite: "Fast, lightweight video clips",
   seedance_1p5_pro: "Keyframes with synced audio",
   happy_horse_1p0: "Expressive motion from a frame",
-  sora_2: "Realistic video with synced audio",
-  sora_2_pro: "Sora's highest-fidelity tier",
   veo_2: "Coherent, high-quality motion",
   veo_3: "Realistic video with native audio",
   veo_3_fast: "Faster Veo 3 with audio",

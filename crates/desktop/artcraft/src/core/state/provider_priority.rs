@@ -11,7 +11,6 @@ use std::sync::{Arc, RwLock};
 pub enum Provider {
   Artcraft,
   Fal,
-  Sora,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -32,7 +31,6 @@ impl ProviderPriority {
     Self {
       provider_priority: vec![
         Provider::Artcraft,
-        Provider::Sora,
         Provider::Fal,
       ],
     }
@@ -59,8 +57,17 @@ impl ProviderPriority {
       return Ok(None);
     }
     let contents = std::fs::read_to_string(filename)?;
-    let providers : Self = serde_json::from_str(&contents)?;
-    Ok(Some(providers))
+    #[derive(Deserialize)]
+    struct StoredPriority {
+      provider_priority: Vec<String>,
+    }
+    let stored: StoredPriority = serde_json::from_str(&contents)?;
+    // The file records user order; only providers available in this build can
+    // participate. Reading never rewrites the saved preference file.
+    let provider_priority = stored.provider_priority.into_iter()
+      .filter_map(|provider| serde_json::from_value(serde_json::Value::String(provider)).ok())
+      .collect();
+    Ok(Some(Self { provider_priority }))
   }
 
   pub fn persist_to_filesystem(&self, app_data_root: &AppDataRoot) -> AnyhowResult<()> {
@@ -142,7 +149,19 @@ mod tests {
   #[test]
   fn test_default_priority() {
     let priority = ProviderPriority::default();
-    assert_eq!(priority.get_priority(), &[Provider::Artcraft, Provider::Sora, Provider::Fal]);
+    assert_eq!(priority.get_priority(), &[Provider::Artcraft, Provider::Fal]);
+  }
+
+  #[test]
+  fn unavailable_providers_do_not_discard_the_remaining_user_order() {
+    let directory = tempfile::tempdir().unwrap();
+    let root = AppDataRoot::create_existing(directory.path()).unwrap();
+    let path = root.settings_dir().get_provider_preferences_path();
+    let source = r#"{"provider_priority":["fal","unavailable_provider","artcraft"]}"#;
+    std::fs::write(&path, source).unwrap();
+    let priority = ProviderPriority::from_filesystem_configs(&root).unwrap().unwrap();
+    assert_eq!(priority.get_priority(), &[Provider::Fal, Provider::Artcraft]);
+    assert_eq!(std::fs::read_to_string(path).unwrap(), source);
   }
 
   #[test]

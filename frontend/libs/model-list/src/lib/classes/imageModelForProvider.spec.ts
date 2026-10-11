@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { expect, it } from "vitest";
 import { GenerationProvider } from "@storyteller/api-enums";
-import { buildImageModelsFromListing } from "../loader/buildModelsFromListing.js";
+import { buildImageModelsFromListing } from "../loader/buildImageModelsFromListing.js";
 import { imageModelForProvider } from "./imageModelForProvider.js";
 
 it("switches Midjourney capabilities without changing the ArtCraft catalog model", () => {

@@ -9,15 +9,6 @@ import type {
 // record of leaf channels — used for colors which animate RGBA per
 // component). These guards let callers handle both shapes without
 // pattern-matching open-coded everywhere.
-//
-// `LEGACY_ANIMATION_STORAGE_KEYS` filters out two old storage-format
-// keys that used to live alongside per-path channels at the same map
-// level. Encountering them on read means the project was saved before
-// the channel-data refactor — skip them rather than treat them as
-// channels.
-
-const LEGACY_ANIMATION_STORAGE_KEYS = new Set(["bindings", "channels"]);
-
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
@@ -62,8 +53,4 @@ export function getChannelEntriesFromData({
   return Object.entries(data).flatMap(([componentKey, channel]) =>
     isLeafChannelData(channel) ? [[componentKey, channel]] : [],
   );
-}
-
-export function isAnimationStorageKey({ key }: { key: string }): boolean {
-  return !LEGACY_ANIMATION_STORAGE_KEYS.has(key);
 }

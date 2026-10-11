@@ -34,7 +34,6 @@ const buildItems = (models: Model[], fallbackIcon: any) =>
     icon: withIcon(getCreatorListIcon(model.creator), fallbackIcon),
     description: model.selectorDescription,
     badges: videoCapabilityBadges(model),
-    modelConfig: model.toLegacyModelConfig(), // Access to full object.
     model: model,
   }));
 

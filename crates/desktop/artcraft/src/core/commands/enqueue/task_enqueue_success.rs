@@ -39,7 +39,6 @@ impl TaskEnqueueSuccess{
       GenerationProvider::Fal => GenerationServiceProvider::Fal,
       GenerationProvider::Grok => GenerationServiceProvider::Grok,
       GenerationProvider::Midjourney => GenerationServiceProvider::Midjourney,
-      GenerationProvider::Sora => GenerationServiceProvider::Sora,
       GenerationProvider::WorldLabs => GenerationServiceProvider::WorldLabs,
       GenerationProvider::Higgsfield => GenerationServiceProvider::Higgsfield,
       GenerationProvider::Krea => GenerationServiceProvider::Krea,
@@ -74,12 +73,9 @@ impl TaskEnqueueSuccess{
       None => None,
       Some(GenerationModel::Unknown(model)) => Some(TaskModelType::Unknown(model.clone())),
       Some(GenerationModel::Flux1Dev) => Some(TaskModelType::Flux1Dev),
-      Some(GenerationModel::FluxDevJuggernaut) => Some(TaskModelType::FluxDevJuggernaut),
       Some(GenerationModel::Flux1Schnell) => Some(TaskModelType::Flux1Schnell),
-      Some(GenerationModel::FluxPro1) => Some(TaskModelType::FluxPro1), // NB: This is for inpainting.
       Some(GenerationModel::FluxPro11) => Some(TaskModelType::FluxPro11),
       Some(GenerationModel::FluxPro11Ultra) => Some(TaskModelType::FluxPro11Ultra),
-      Some(GenerationModel::FluxProKontextMax) => Some(TaskModelType::FluxProKontextMax),
       Some(GenerationModel::Gemini25Flash) => Some(TaskModelType::Gemini25Flash),
       Some(GenerationModel::NanoBanana) => Some(TaskModelType::NanoBanana),
       Some(GenerationModel::NanoBanana2) => Some(TaskModelType::NanoBanana2),
@@ -109,8 +105,6 @@ impl TaskEnqueueSuccess{
       Some(GenerationModel::Seedance1p5Pro) => Some(TaskModelType::Seedance1p5Pro),
       Some(GenerationModel::Seedance2p0) => Some(TaskModelType::Seedance2p0),
       Some(GenerationModel::Seedance2p0Fast) => Some(TaskModelType::Seedance2p0Fast),
-      Some(GenerationModel::Sora2) => Some(TaskModelType::Sora2),
-      Some(GenerationModel::Sora2Pro) => Some(TaskModelType::Sora2Pro),
       Some(GenerationModel::Veo2) => Some(TaskModelType::Veo2),
       Some(GenerationModel::Veo3) => Some(TaskModelType::Veo3),
       Some(GenerationModel::Veo3p1) => Some(TaskModelType::Veo3p1),
@@ -130,7 +124,6 @@ impl TaskEnqueueSuccess{
       // TODO: These seem wrong -
       Some(GenerationModel::Kling1_6) => Some(TaskModelType::Kling16Pro), // NB: `VideoModel::Kling16Pro`.
       Some(GenerationModel::Kling2_0) => None, // TODO: unused elsewhere?
-      Some(GenerationModel::Sora) => None, // TODO: unused elsewhere?
     };
 
     create_task(CreateTaskArgs {

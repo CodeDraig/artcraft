@@ -140,7 +140,7 @@ export class StoryTellerProxyScene {
       .map((j) => j.media_file_token)
       .filter((t) => t.startsWith("m_"));
     if (mediaTokens.length > 0) {
-      await this.scene.warmMediaURLs(mediaTokens);
+      await this.scene.mediaUrls.warm(mediaTokens);
     }
     if (ticket?.cancelled) return;
 

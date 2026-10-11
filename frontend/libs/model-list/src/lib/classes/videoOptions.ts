@@ -18,22 +18,6 @@ export function resolveVideoGenerationCount(model: VideoModel, current: number):
     ? model.defaultGenerationCount : options[0];
 }
 
-/** Normalize old display values while preserving future API values. */
-export function videoResolutionValue(value: string): string {
-  const legacy: Record<string, string> = {
-    "480p": "four_eighty_p",
-    "720p": "seven_twenty_p",
-    "1080p": "ten_eighty_p",
-    "1k": "one_k",
-    "2k": "two_k",
-    "2K": "two_k",
-    "3k": "three_k",
-    "4k": "four_k",
-    "4K": "four_k",
-  };
-  return legacy[value] ?? value;
-}
-
 export function videoDurationRange(
   model: VideoModel,
   referenceMode: boolean,

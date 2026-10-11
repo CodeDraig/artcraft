@@ -8,7 +8,6 @@ import type {
 import { formatLinearRgba } from "../params";
 import {
   getChannelEntriesFromData,
-  isAnimationStorageKey,
 } from "./channel-data";
 import {
   getChannelValueAtTime,
@@ -223,9 +222,7 @@ export function getElementKeyframes({
     return [];
   }
 
-  return Object.entries(animations).filter(([key]) =>
-    isAnimationStorageKey({ key }),
-  ).flatMap(
+  return Object.entries(animations).flatMap(
     ([propertyPath, data]) => {
       if (!data || !isAnimationPath(propertyPath)) {
         return [];

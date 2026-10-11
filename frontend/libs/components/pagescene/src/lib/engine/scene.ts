@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { SceneMediaUrls, type MediaUrlResolver } from "./SceneMediaUrls";
 import { GLTFLoader, GLTF } from "three/addons/loaders/GLTFLoader.js";
 import { MMDLoader } from "three/addons/loaders/MMDLoader.js";
 
@@ -24,7 +25,7 @@ import {
 // Zustand store directly and has no Tauri imports; the host (artcraft
 // wrapper) supplies fetchAsset (CORS-bypassed binary fetch) and
 // getMediaUrlByToken (resolves a media_file_token to its CDN URL).
-export type SceneDeps = {
+export type SceneDeps = MediaUrlResolver & {
   getCameras: () => Camera[];
   getSelectedCameraId: () => string;
   // Adapter-supplied binary fetch. Optional `init.signal` lets the
@@ -34,12 +35,6 @@ export type SceneDeps = {
     url: string,
     init?: { signal?: AbortSignal },
   ) => Promise<Response>;
-  getMediaUrlByToken: (token: string) => Promise<string>;
-  // Optional batch resolver — when provided, the proxy scene loader
-  // warms a URL cache with one roundtrip instead of N. When absent,
-  // Scene.warmMediaURLs falls back to Promise.all of the single-token
-  // method.
-  getMediaUrlsByTokens?: (tokens: string[]) => Promise<Record<string, string>>;
   // Fired after a GLB finishes loading into the scene. Outliner metadata
   // (hasSkeleton, bakedClips) is computed at refresh time, so the editor
   // uses this to refresh rows that were rendered before the async load
@@ -82,6 +77,7 @@ class Scene {
   // Which guarentees that the scene is availible.
   current_scene_checksum: string;
   private deps: SceneDeps;
+  readonly mediaUrls: SceneMediaUrls;
   constructor(
     name: string,
     camera_name: string,
@@ -105,6 +101,7 @@ class Scene {
     this.placeholder_manager = undefined;
     this.updateSurfaceIdAttributeToMesh = updateSurfaceIdAttributeToMesh;
     this.deps = deps;
+    this.mediaUrls = new SceneMediaUrls(deps);
 
     this.current_scene_checksum = "";
   }
@@ -559,47 +556,6 @@ class Scene {
     }
   }
 
-  // URL cache populated by warmMediaURLs() before a scene load. Lets
-  // every per-asset loadObject() skip its own metadata roundtrip. Lives
-  // for the lifetime of the Scene; entries are cheap (string→string).
-  private mediaUrlCache: Map<string, string> = new Map();
-
-  // Resolve a media_file_token to its CDN URL. Reads from the warm
-  // cache first (populated by warmMediaURLs during a scene load) before
-  // falling back to a single-token metadata fetch.
-  async getMediaURL(media_id: string) {
-    const cached = this.mediaUrlCache.get(media_id);
-    if (cached !== undefined) return cached;
-    return this.deps.getMediaUrlByToken(media_id);
-  }
-
-  // Warm the URL cache for a batch of tokens up front. Uses the host's
-  // batch resolver when available (one roundtrip), otherwise fans out
-  // single-token requests in parallel. Missing tokens (e.g. an asset
-  // was deleted) silently fall through to the per-asset fetch path.
-  async warmMediaURLs(tokens: string[]): Promise<void> {
-    if (tokens.length === 0) return;
-    const unique = Array.from(new Set(tokens));
-    if (this.deps.getMediaUrlsByTokens) {
-      const urls = await this.deps.getMediaUrlsByTokens(unique);
-      for (const [token, url] of Object.entries(urls)) {
-        if (url) this.mediaUrlCache.set(token, url);
-      }
-      return;
-    }
-    const results = await Promise.all(
-      unique.map((token) =>
-        this.deps
-          .getMediaUrlByToken(token)
-          .then((url) => [token, url] as const)
-          .catch(() => [token, ""] as const),
-      ),
-    );
-    for (const [token, url] of results) {
-      if (url) this.mediaUrlCache.set(token, url);
-    }
-  }
-
   private floatToPercent(value: number) {
     return `${(value * 100).toFixed(0)}%`;
   }
@@ -657,7 +613,7 @@ class Scene {
     if (this.placeholder_manager === undefined) {
       throw Error("Place holder Manager is undefined");
     }
-    const url = await this.getMediaURL(media_id);
+    const url = await this.mediaUrls.resolve(media_id);
     const key = media_id + name + generateUUID();
     await this.placeholder_manager.add(key, `Loading: ${name}`, position);
     const mmd = await this.load_mmd_wrapped(url, async (progress) => {
@@ -733,7 +689,7 @@ class Scene {
     version: number = 1.0,
     signal?: AbortSignal,
   ): Promise<THREE.Object3D> {
-    const url = await this.getMediaURL(media_id);
+    const url = await this.mediaUrls.resolve(media_id);
 
     if (url.includes(".pmd") || url.includes(".pmx")) {
       return await this.loadMMDWithPlaceholder(
@@ -811,7 +767,7 @@ class Scene {
       throw Error("Place holder Manager is undefined");
     }
 
-    const url = await this.getMediaURL(media_id);
+    const url = await this.mediaUrls.resolve(media_id);
     const key = media_id + name + generateUUID();
     await this.placeholder_manager.add(key, `Loading: ${name}`, position);
 
@@ -872,7 +828,7 @@ class Scene {
       throw Error("Place holder Manager is undefined");
     }
 
-    const url = await this.getMediaURL(media_id);
+    const url = await this.mediaUrls.resolve(media_id);
     const key = media_id + name + generateUUID();
     await this.placeholder_manager.add(key, `Loading: ${name}`, position);
 
@@ -1011,7 +967,7 @@ class Scene {
     signal?: AbortSignal,
   ): Promise<GLTF | null> {
     try {
-      const url = await this.getMediaURL(media_id);
+      const url = await this.mediaUrls.resolve(media_id);
       return await this.load_glb_wrapped_no_cors(url, () => {}, signal);
     } catch (error) {
       if ((error as { name?: string })?.name !== "AbortError") {

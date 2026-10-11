@@ -1,3 +1,4 @@
+import type { PromptResolution } from "./promptResolution";
 import { ChevronDownIcon, ChevronUpIcon, EraserIcon, FrameIcon, MaximizeIcon, MousePointerIcon, MoveIcon, PenIcon, RectangleHorizontalIcon, RectangleVerticalIcon, Redo2Icon, RotateCcwIcon, SquareIcon, SquarePenIcon } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
@@ -8,8 +9,11 @@ import { Tooltip } from "@storyteller/ui-tooltip";
 import { useEffect, useRef, useState } from "react";
 import { CommonAspectRatio, ImageModel } from "@storyteller/model-list";
 import { twMerge } from "tailwind-merge";
-import { ImagePromptRow, type UploadImageFn } from "./ImagePromptRow";
-import { RefImage, usePromptEditStore, useEnterToGenerateStore } from "./promptStore";
+import { ImagePromptRow } from "./ImagePromptRow";
+import type { UploadMediaFn } from "@storyteller/api";
+import { RefImage } from "./promptMedia";
+import { usePromptEditStore } from "./promptEditStore";
+import { useEnterToGenerateStore } from "./enterToGenerateStore";
 import { toast } from "@storyteller/ui-toaster";
 import { GenerationProvider } from "@storyteller/api-enums";
 import { AspectRatioPicker } from "./common/AspectRatioPicker";
@@ -43,7 +47,7 @@ export interface PromptBoxEditProps {
   onGenerationCountChange?: (count: number) => void;
   supportsMaskedInpainting?: boolean;
   isEnqueueing?: boolean;
-  uploadImage?: UploadImageFn;
+  uploadImage?: UploadMediaFn;
   isNanoBananaModel?: boolean;
   onUndo?: () => void;
   onRedo?: () => void;
@@ -128,17 +132,20 @@ export const PromptBoxEdit = ({
   const [resolutionList, setResolutionList] = useState<PopoverItem[]>([
     {
       label: "1K",
-      selected: resolution === "1k",
+      action: "one_k",
+      selected: resolution === "one_k",
       icon: <MaximizeIcon  className="h-4 w-4" />,
     },
     {
       label: "2K",
-      selected: resolution === "2k",
+      action: "two_k",
+      selected: resolution === "two_k",
       icon: <MaximizeIcon  className="h-4 w-4" />,
     },
     {
       label: "4K",
-      selected: resolution === "4k",
+      action: "four_k",
+      selected: resolution === "four_k",
       icon: <MaximizeIcon  className="h-4 w-4" />,
     },
   ]);
@@ -160,7 +167,7 @@ export const PromptBoxEdit = ({
     setResolutionList((prev) =>
       prev.map((item) => ({
         ...item,
-        selected: item.label.toLowerCase() === resolution,
+        selected: item.action === resolution,
       })),
     );
   }, [resolution]);
@@ -172,7 +179,7 @@ export const PromptBoxEdit = ({
   };
 
   const handleResolutionSelect = (selectedItem: PopoverItem) => {
-    setResolution(selectedItem.label.toLowerCase() as any);
+    setResolution(selectedItem.action as PromptResolution);
   };
 
   const getCurrentAspectRatioIcon = (): LucideIcon => {

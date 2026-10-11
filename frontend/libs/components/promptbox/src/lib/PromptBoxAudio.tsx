@@ -21,11 +21,9 @@ import {
   getModelDescription,
   getModelInfo,
 } from "@storyteller/model-list";
-import {
-  usePromptAudioStore,
-  useEnterToGenerateStore,
-  type RefAudio,
-} from "./promptStore";
+import { usePromptAudioStore } from "./promptAudioStore";
+import { useEnterToGenerateStore } from "./enterToGenerateStore";
+import { type RefAudio } from "./promptMedia";
 import { useAutoGrowEditorHeight } from "./useAutoGrowEditorHeight";
 import {
   PromptFullscreenModal,

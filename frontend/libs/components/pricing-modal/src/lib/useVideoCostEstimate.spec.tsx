@@ -10,7 +10,7 @@ const mocks = vi.hoisted(() => ({
   state: {
     duration: 30,
     aspectRatio: "16:9",
-    resolution: "4K",
+    resolution: "four_k",
     inputMode: "reference",
     referenceImages: [{ mediaToken: "mf_image" }],
     endFrameImage: undefined,
@@ -125,7 +125,7 @@ const model = {
   durationOptions: undefined,
   defaultDuration: 5,
   supportsReferenceMode: true,
-  resolutionOptions: ["4K"],
+  resolutionOptions: ["four_k"],
   bitrateOptions: ["normal", "high"],
   defaultBitrate: "normal",
   outputFormatOptions: ["mp4", "mov"],

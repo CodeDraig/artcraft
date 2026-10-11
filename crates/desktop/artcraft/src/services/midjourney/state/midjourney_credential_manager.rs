@@ -1,10 +1,9 @@
 use crate::core::state::data_dir::app_data_root::AppDataRoot;
 use crate::services::midjourney::state::midjourney_credential::{MidjourneyAccountInfo, MidjourneyCredential};
 use crate::services::midjourney::state::midjourney_user_info::MidjourneyUserInfo;
-use crate::services::midjourney::state::serializable_midjourney_state::SerializableMidjourneyState;
+use crate::services::midjourney::state::midjourney_token::{populate_account_info, token_needs_refresh, AUTH_ID};
 use crate::services::midjourney::utils::extract_midjourney_user_id_from_cookies::extract_midjourney_user_id_from_cookie_header;
 use anyhow::{anyhow, bail};
-use base64::prelude::{Engine, BASE64_URL_SAFE_NO_PAD};
 use browser_emulation::browser_profile::BrowserProfile;
 use chrono::Utc;
 use cookie_store_wrapper::cookie_store::CookieStore;
@@ -14,13 +13,11 @@ use midjourney_client::endpoints::refresh_token::{refresh_token, RefreshTokenArg
 use midjourney_client::error::midjourney_api_error::MidjourneyApiError;
 use midjourney_client::error::midjourney_error::MidjourneyError;
 use midjourney_client::recipes::get_user_info::{get_user_info, GetUserInfoArgs};
-use serde_json::Value;
 use std::sync::{Arc, RwLock};
 use std::time::Duration;
 use tokio::sync::Mutex;
 use url::Url;
 
-const AUTH_ID: &str = "__Host-Midjourney.AuthUserTokenV3_i";
 const AUTH_REFRESH: &str = "__Host-Midjourney.AuthUserTokenV3_r";
 const MIDJOURNEY_ORIGIN: &str = "https://www.midjourney.com/";
 
@@ -47,7 +44,7 @@ impl MidjourneyCredentialManager {
 
   pub fn initialize_from_disk_infallible(app_data_root: &AppDataRoot) -> Self {
     let manager = Self::initialize_empty(app_data_root);
-    match load_or_migrate(app_data_root) {
+    match load_credential(app_data_root) {
       Ok(credential) => {
         if let Ok(mut current) = manager.credential.write() {
           *current = credential;
@@ -79,13 +76,10 @@ impl MidjourneyCredentialManager {
 
   pub async fn clear_credentials(&self) -> anyhow::Result<()> {
     let _guard = self.mutation.lock().await;
-    // Remove both formats, so a later startup cannot migrate a logged-out account.
-    for path in [self.app_data_root.credentials_dir().get_midjourney_state_path(), self.credential_path()] {
-      match std::fs::remove_file(path) {
-        Ok(()) => {},
-        Err(err) if err.kind() == std::io::ErrorKind::NotFound => {},
-        Err(err) => return Err(err.into()),
-      }
+    match std::fs::remove_file(self.credential_path()) {
+      Ok(()) => {},
+      Err(err) if err.kind() == std::io::ErrorKind::NotFound => {},
+      Err(err) => return Err(err.into()),
     }
     *self.credential.write().map_err(|_| anyhow!("Midjourney credential lock poisoned"))? = None;
     Ok(())
@@ -168,49 +162,14 @@ impl MidjourneyCredentialManager {
   }
 }
 
-fn load_or_migrate(root: &AppDataRoot) -> anyhow::Result<Option<MidjourneyCredential>> {
+fn load_credential(root: &AppDataRoot) -> anyhow::Result<Option<MidjourneyCredential>> {
   let path = root.credentials_dir().get_midjourney_credential_path();
   if path.exists() {
     let credential = MidjourneyCredential::load(&path)?;
     credential.save(&path)?; // Persist a stable ID for hand-written files.
     return Ok(Some(credential));
   }
-  let legacy_path = root.credentials_dir().get_midjourney_state_path();
-  if !legacy_path.exists() {
-    return Ok(None);
-  }
-  let legacy: SerializableMidjourneyState = serde_json::from_str(&std::fs::read_to_string(legacy_path)?)?;
-  let Some(cookies) = legacy.user_cookies else {
-    return Ok(None);
-  };
-  let cookies = CookieStore::from_cookie_header(&cookies.to_cookie_store().to_cookie_string(), &Url::parse(MIDJOURNEY_ORIGIN)?);
-  let mut credential = MidjourneyCredential::new(cookies);
-  credential.maybe_user_info = legacy.user_info.map(|info| MidjourneyAccountInfo { maybe_user_id: info.user_id, maybe_email: info.email, maybe_username: None });
-  populate_account_info(&mut credential);
-  credential.save(&path)?;
-  Ok(Some(credential))
-}
-
-fn populate_account_info(credential: &mut MidjourneyCredential) {
-  let Some(claims) = credential.cookie.cookies.get_cookie_value(AUTH_ID).and_then(jwt_claims) else {
-    return;
-  };
-  let info = credential.maybe_user_info.get_or_insert_with(MidjourneyAccountInfo::default);
-  if let Some(id) = claims.get("midjourney_id").and_then(Value::as_str).filter(|id| !id.is_empty()) {
-    info.maybe_user_id = Some(id.to_string());
-  }
-  if let Some(email) = claims.get("email").and_then(Value::as_str) {
-    info.maybe_email = Some(email.to_string());
-  }
-}
-
-fn token_needs_refresh(maybe_token: Option<&str>, now: i64) -> bool {
-  maybe_token.and_then(jwt_claims).and_then(|claims| claims.get("exp")?.as_i64()).is_none_or(|expires| expires <= now + 120)
-}
-
-fn jwt_claims(token: &str) -> Option<Value> {
-  let payload = token.split('.').nth(1)?;
-  serde_json::from_slice(&BASE64_URL_SAFE_NO_PAD.decode(payload).ok()?).ok()
+  Ok(None)
 }
 
 fn is_revoked_refresh(error: &MidjourneyError) -> bool {
@@ -225,6 +184,7 @@ mod tests {
   use super::*;
   use crate::core::state::data_dir::trait_data_subdir::DataSubdir;
   use tempfile::TempDir;
+  use base64::prelude::{Engine, BASE64_URL_SAFE_NO_PAD};
 
   const TEST_USER_ID: &str = "00000000-0000-4000-8000-000000000001";
 
@@ -232,37 +192,23 @@ mod tests {
     use super::*;
 
     #[tokio::test]
-    async fn migrates_legacy_cookies_and_logout_does_not_touch_artcraft() {
+    async fn login_round_trips_and_logout_preserves_unrelated_files() {
       let (_dir, root) = root();
-      let legacy = root.credentials_dir().get_midjourney_state_path();
+      let obsolete = root.credentials_dir().path().join("midjourney_state.json");
       let artcraft = root.credentials_dir().get_storyteller_session_cookie_file_path();
       std::fs::write(&artcraft, "existing-artcraft-session").unwrap();
-      std::fs::write(
-        &legacy,
-        serde_json::json!({
-          "version": 1,
-          "user_cookies": {"cookies": [
-            {"name": AUTH_ID, "value": token(Utc::now().timestamp() + 3600)},
-            {"name": AUTH_REFRESH, "value": "test-refresh"}
-          ]},
-          "user_info": {"user_id": TEST_USER_ID, "email": "test@example.invalid", "websocket_token": "old-socket-token"}
-        })
-        .to_string(),
-      )
-      .unwrap();
+      std::fs::write(&obsolete, "obsolete credentials").unwrap();
       let manager = MidjourneyCredentialManager::initialize_from_disk_infallible(&root);
+      assert!(manager.session().await.unwrap().is_none());
+      manager.save_login(cookies(Utc::now().timestamp() + 3600)).await.unwrap();
       let session = manager.session().await.unwrap().unwrap();
       assert_eq!(session.user_id.as_str(), TEST_USER_ID);
-      let contents = std::fs::read_to_string(root.credentials_dir().get_midjourney_credential_path()).unwrap();
-      assert!(contents.contains("midjourney_cookies"));
-      assert!(!contents.contains("old-socket-token"));
-      assert!(legacy.exists(), "migration preserves the old file until logout");
       let reloaded = MidjourneyCredentialManager::initialize_from_disk_infallible(&root);
       assert_eq!(reloaded.session().await.unwrap().unwrap().credential_id, session.credential_id);
       manager.clear_credentials().await.unwrap();
-      assert!(!legacy.exists());
       assert!(!root.credentials_dir().get_midjourney_credential_path().exists());
       assert_eq!(std::fs::read_to_string(artcraft).unwrap(), "existing-artcraft-session");
+      assert_eq!(std::fs::read_to_string(obsolete).unwrap(), "obsolete credentials");
       let reloaded = MidjourneyCredentialManager::initialize_from_disk_infallible(&root);
       assert!(reloaded.session().await.unwrap().is_none());
     }
@@ -306,11 +252,10 @@ mod tests {
     }
 
     #[test]
-    fn corrupt_modern_credential_does_not_revive_legacy_state() {
+    fn corrupt_credential_is_an_error() {
       let (_dir, root) = root();
       std::fs::write(root.credentials_dir().get_midjourney_credential_path(), "not valid toml").unwrap();
-      std::fs::write(root.credentials_dir().get_midjourney_state_path(), "{}").unwrap();
-      assert!(load_or_migrate(&root).is_err());
+      assert!(load_credential(&root).is_err());
     }
   }
 

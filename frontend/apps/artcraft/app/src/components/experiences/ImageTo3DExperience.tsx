@@ -1,3 +1,5 @@
+import { useObjectImageUpload } from "./useObjectImageUpload";
+import { useWorldImageUploads, MAX_WORLD_IMAGES, type WorldImage } from "./useWorldImageUploads";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { animated, useSpring } from "@react-spring/web";
 import { Button, GenerateButton } from "@storyteller/ui-button";
@@ -8,17 +10,14 @@ import { BoxIcon, ImagesIcon, PlusIcon, UploadIcon, XIcon } from "lucide-react";
 import { twMerge } from "tailwind-merge";
 import { useImageTo3DStore } from "../../pages/PageImageTo3DObject/ImageTo3DStore";
 import { useImageTo3DWorldStore } from "../../pages/PageImageTo3DWorld/ImageTo3DWorldStore";
-import { MediaUploadApi } from "@storyteller/api";
 import { GalleryItem, GalleryModal } from "@storyteller/ui-gallery-modal";
 import {
   GenerateMesh,
-  EnqueueImageTo3dObjectModel,
   GenerateSplat,
   commandErrorMessage,
   downloadFileFromUrl,
 } from "@storyteller/tauri-api";
 import { toast } from "react-hot-toast";
-import { v4 as uuidv4 } from "uuid";
 import { useTabStore } from "../../pages/Stores/TabState";
 import { addObject, getActiveEditor } from "@storyteller/ui-pagescene";
 import type { MediaItem } from "@storyteller/ui-pagescene";
@@ -41,16 +40,6 @@ import { CreateEmptyState } from "~/components/generation-feed/CreateEmptyState"
 
 type Mode = "image" | "text";
 type Variant = "object" | "world";
-
-interface WorldImage {
-  id: string;
-  preview: string;
-  mediaToken: string | null;
-  name: string;
-  isUploading: boolean;
-}
-
-const MAX_WORLD_IMAGES = 10;
 
 interface ImageTo3DExperienceProps {
   title: string;
@@ -76,7 +65,7 @@ const generateId = () =>
 
 const WORLD_MODEL_PAGE = ModelPage.ImageTo3DWorld;
 const OBJECT_MODEL_PAGE = ModelPage.ImageTo3DObject;
-const DEFAULT_OBJECT_MODEL_ID = EnqueueImageTo3dObjectModel.Hunyuan3d3;
+const DEFAULT_OBJECT_MODEL_ID = "hunyuan_3d_3";
 
 export const ImageTo3DExperience = ({
   title,
@@ -84,6 +73,8 @@ export const ImageTo3DExperience = ({
   variant,
   backgroundImage,
 }: ImageTo3DExperienceProps) => {
+  const { uploadedPreview, setUploadedPreview, uploadedName, setUploadedName, uploadedMediaToken, setUploadedMediaToken, isUploading, handleFiles } = useObjectImageUpload();
+  const { worldImages, setWorldImages, handleWorldFiles, removeWorldImage } = useWorldImageUploads();
   const [activeMode, setActiveMode] = useState<Mode>("image");
   const selectedWorldModel = useSelectedModel(WORLD_MODEL_PAGE);
   const selectedWorldProvider = useSelectedProviderForModel(
@@ -92,7 +83,7 @@ export const ImageTo3DExperience = ({
   );
   const selectedObjectModel = useSelectedModel(OBJECT_MODEL_PAGE);
   const selectedObjectModelId =
-    (selectedObjectModel?.id as EnqueueImageTo3dObjectModel | undefined) ??
+    selectedObjectModel?.tauriId ??
     DEFAULT_OBJECT_MODEL_ID;
   const worldCredits = useCostBreakdownModalStore(
     (s) => s.estimatedCreditsByPage[WORLD_MODEL_PAGE],
@@ -100,17 +91,13 @@ export const ImageTo3DExperience = ({
   const objectCredits = useCostBreakdownModalStore(
     (s) => s.estimatedCreditsByPage[OBJECT_MODEL_PAGE],
   );
-  const [uploadedPreview, setUploadedPreview] = useState<string | null>(null);
-  const [uploadedName, setUploadedName] = useState<string | null>(null);
   const [prompt, setPrompt] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const worldFileInputRef = useRef<HTMLInputElement>(null);
   const worldTextareaRef = useRef<HTMLTextAreaElement>(null);
-  const [worldImages, setWorldImages] = useState<WorldImage[]>([]);
   const [worldPrompt, setWorldPrompt] = useState("");
   const [previewImage, setPreviewImage] = useState<string | null>(null);
 
@@ -143,9 +130,6 @@ export const ImageTo3DExperience = ({
 
   const results = variant === "object" ? objectResults : worldResults;
   const resetResults = variant === "object" ? objectReset : worldReset;
-  const [uploadedMediaToken, setUploadedMediaToken] = useState<string | null>(
-    null,
-  );
   const [isGalleryModalOpen, setIsGalleryModalOpen] = useState(false);
   const [selectedGalleryImages, setSelectedGalleryImages] = useState<string[]>(
     [],
@@ -215,46 +199,6 @@ export const ImageTo3DExperience = ({
     }
   });
 
-  const handleFiles = async (files?: FileList | null) => {
-    if (!files || files.length === 0) return;
-    const file = files[0];
-    if (!file.type.startsWith("image/")) return;
-
-    setUploadedName(file.name);
-    setUploadedMediaToken(null);
-    setIsUploading(true);
-
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const dataUrl = e.target?.result as string;
-      setUploadedPreview(dataUrl);
-    };
-    reader.readAsDataURL(file);
-
-    try {
-      const mediaUploadApi = new MediaUploadApi();
-      const uuid = uuidv4();
-
-      const uploadResult = await mediaUploadApi.UploadImage({
-        blob: file,
-        fileName: file.name,
-        uuid: uuid,
-      });
-
-      if (!uploadResult.success || !uploadResult.data) {
-        throw new Error("Failed to upload image");
-      }
-
-      setUploadedMediaToken(uploadResult.data);
-    } catch (error) {
-      toast.error("Failed to upload image");
-      setUploadedPreview(null);
-      setUploadedName(null);
-    } finally {
-      setIsUploading(false);
-    }
-  };
-
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     handleFiles(event.target.files);
     event.target.value = "";
@@ -269,64 +213,6 @@ export const ImageTo3DExperience = ({
 
   const handlePickFromLibrary = () => {
     setIsGalleryModalOpen(true);
-  };
-
-  const handleWorldFiles = async (files: File[]) => {
-    const remaining = MAX_WORLD_IMAGES - worldImages.length;
-    const imageFiles = files
-      .filter((f) => f.type.startsWith("image/"))
-      .slice(0, remaining);
-
-    await Promise.all(
-      imageFiles.map(async (file) => {
-        const imageId = generateId();
-
-        const preview = await new Promise<string>((resolve) => {
-          const reader = new FileReader();
-          reader.onload = (e) => resolve(e.target?.result as string);
-          reader.readAsDataURL(file);
-        });
-
-        setWorldImages((prev) => [
-          ...prev,
-          {
-            id: imageId,
-            preview,
-            mediaToken: null,
-            name: file.name,
-            isUploading: true,
-          },
-        ]);
-
-        try {
-          const mediaUploadApi = new MediaUploadApi();
-          const uploadResult = await mediaUploadApi.UploadImage({
-            blob: file,
-            fileName: file.name,
-            uuid: uuidv4(),
-          });
-
-          if (!uploadResult.success || !uploadResult.data) {
-            throw new Error("Upload failed");
-          }
-
-          setWorldImages((prev) =>
-            prev.map((img) =>
-              img.id === imageId
-                ? { ...img, mediaToken: uploadResult.data!, isUploading: false }
-                : img,
-            ),
-          );
-        } catch {
-          toast.error(`Failed to upload ${file.name}`);
-          setWorldImages((prev) => prev.filter((img) => img.id !== imageId));
-        }
-      }),
-    );
-  };
-
-  const removeWorldImage = (imageId: string) => {
-    setWorldImages((prev) => prev.filter((img) => img.id !== imageId));
   };
 
   const handleImageSelect = (id: string) => {

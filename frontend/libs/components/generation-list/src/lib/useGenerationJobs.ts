@@ -55,7 +55,6 @@ const DEFAULT_DURATION_MS: Record<GenerationMediaClass, number> = {
   image: 30000,
   video: 900000,
   audio: 120000,
-  dimensional: 120000,
   mesh: 120000,
   splat: 120000,
 };
@@ -66,9 +65,8 @@ const taskDurationCache = new Map<string, number>();
 // ── Helpers ────────────────────────────────────────────────────────────────
 
 // The backend `inference_category` strings for 3D are "object_generation"
-// (mesh) and "splat_generation" (gaussian splats). Both render as the
-// "dimensional" media class, but stay distinct here so the two 3D create pages
-// can each filter to only their own generations.
+// (mesh) and "splat_generation" (gaussian splats). Keep those media classes
+// distinct so each 3D create page shows its own generations.
 export type JobMediaFilter =
   | "image"
   | "video"
@@ -90,7 +88,7 @@ function getJobMediaType(
 
 function getJobMediaClass(job: Job): GenerationMediaClass {
   const inferred = getJobMediaType(job);
-  if (inferred === "object" || inferred === "splat") return "dimensional";
+  if (inferred === "object") return "mesh";
   return inferred === "other" ? "image" : inferred;
 }
 
@@ -104,7 +102,6 @@ function get3DCoverThumbnail(source: any): string | null {
   return (
     cover.maybe_links?.maybe_thumbnail_template?.replace("{WIDTH}", "512") ??
     cover.maybe_links?.cdn_url ??
-    cover.maybe_cover_image_public_bucket_url ??
     null
   );
 }

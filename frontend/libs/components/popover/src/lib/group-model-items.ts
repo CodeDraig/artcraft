@@ -1,5 +1,5 @@
 import { FAMILY_ORDER } from "@storyteller/model-list";
-import { PopoverItem } from "./popover";
+import type { PopoverItem } from "./PopoverItem";
 
 // Below this many models a grouped picker is pure friction — show the flat
 // list. Keeps short pickers (3D pages, static lists) flat with no per-callsite

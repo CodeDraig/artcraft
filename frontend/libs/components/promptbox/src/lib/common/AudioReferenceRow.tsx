@@ -10,7 +10,7 @@ import { DynamicIcon } from "@storyteller/icons";
 import { toast } from "@storyteller/ui-toaster";
 import { UploaderStates } from "@storyteller/common";
 import type { UploadMediaFn } from "@storyteller/api";
-import type { RefAudio, RefImage } from "../promptStore";
+import type { RefAudio, RefImage } from "../promptMedia";
 import {
   AUDIO_FILE_ACCEPT,
   AUDIO_FILE_TYPE_ERROR,

@@ -1,8 +1,10 @@
+import { useLightboxPrompt } from "./useLightboxPrompt";
+import { useLightboxBatch } from "./useLightboxBatch";
+import { LightboxMediaInfo } from "./LightboxMediaInfo";
 import { Modal } from "@storyteller/ui-modal";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { Button } from "@storyteller/ui-button";
-import dayjs from "dayjs";
-import { ArrowDownToLineIcon, BoxIcon, CheckIcon, ChevronLeftIcon, ChevronRightIcon, CopyIcon, GlobeIcon, ImageIcon, InfoIcon, LinkIcon, LogOutIcon, MusicIcon, PauseIcon, PencilIcon, PlayIcon, RotateCwIcon, SearchIcon, Trash2Icon, UserIcon, VideoIcon, WandSparklesIcon } from "lucide-react";
+import { ArrowDownToLineIcon, BoxIcon, CheckIcon, ChevronLeftIcon, ChevronRightIcon, CopyIcon, GlobeIcon, ImageIcon, LinkIcon, LogOutIcon, MusicIcon, PauseIcon, PencilIcon, PlayIcon, RotateCwIcon, SearchIcon, Trash2Icon, UserIcon, VideoIcon, WandSparklesIcon } from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
 import { MediaFileDelete } from "@storyteller/tauri-api";
 import { LoadingSpinner } from "@storyteller/ui-loading-spinner";
@@ -17,8 +19,7 @@ import {
   useRef,
 } from "react";
 import { gtagEvent } from "@storyteller/google-analytics";
-import { MediaFilesApi, PromptsApi } from "@storyteller/api";
-import type { Prompts, UserInfo } from "@storyteller/api";
+import type { Prompts } from "@storyteller/api";
 import { Gravatar } from "@storyteller/ui-gravatar";
 import { toast } from "@storyteller/ui-toaster";
 import { twMerge } from "tailwind-merge";
@@ -26,12 +27,6 @@ import {
   showActionReminder,
   isActionReminderOpen,
 } from "@storyteller/ui-action-reminder-modal";
-import {
-  getCreatorIconPathForModelId,
-  getModelDisplayName,
-  getProviderDisplayName,
-  getProviderIconByName,
-} from "@storyteller/model-list";
 import useEmblaCarousel from "embla-carousel-react";
 import type { EmblaOptionsType } from "embla-carousel";
 import {
@@ -39,9 +34,6 @@ import {
   getContextImageThumbnail,
   THUMBNAIL_SIZES,
   PLACEHOLDER_IMAGES,
-  formatAspectRatio,
-  formatDuration,
-  formatResolution,
 } from "@storyteller/common";
 import { TagsSection } from "./tags/TagsSection";
 
@@ -130,9 +122,10 @@ export function LightboxModal({
   // it won't be able to load in cors mode and will show blank in the canvas and 3D engine. This is a really
   // stupid hack around this behavior.
 
+  const { promptData, promptLoading, hasPromptToken, creator } = useLightboxPrompt(mediaId);
+  const { batchImages, batchTokens } = useLightboxBatch(batchImageToken, mediaId, imageUrl);
   const [refPreviewUrl, setRefPreviewUrl] = useState<string | null>(null);
   const [mediaLoaded, setMediaLoaded] = useState<boolean>(false);
-  const [promptData, setPromptData] = useState<Prompts | null>(null);
   const prompt = promptData?.maybe_positive_prompt ?? null;
   const generationProvider = promptData?.maybe_generation_provider ?? null;
   const modelType = promptData?.maybe_model_type ?? null;
@@ -143,16 +136,11 @@ export function LightboxModal({
   const generateAudio = promptData?.maybe_generate_audio ?? null;
   const [mediaWidth, setMediaWidth] = useState<number | null>(null);
   const [mediaHeight, setMediaHeight] = useState<number | null>(null);
-  const [promptLoading, setPromptLoading] = useState<boolean>(false);
-  const [hasPromptToken, setHasPromptToken] = useState<boolean>(false);
   const [isPromptExpanded, setIsPromptExpanded] = useState<boolean>(false);
   const promptRef = useRef<HTMLDivElement>(null);
   const [isPromptClamped, setIsPromptClamped] = useState<boolean>(false);
   const [promptCopied, setPromptCopied] = useState<boolean>(false);
   const promptCopiedTimeoutRef = useRef<number | null>(null);
-  const [batchImages, setBatchImages] = useState<string[] | null>(null);
-  const [batchTokens, setBatchTokens] = useState<string[] | null>(null);
-  const [creator, setCreator] = useState<UserInfo | null>(null);
   const [shareCopied, setShareCopied] = useState<boolean>(false);
   const shareCopiedTimeoutRef = useRef<number | null>(null);
   const [playingAudioToken, setPlayingAudioToken] = useState<string | null>(null);
@@ -186,9 +174,6 @@ export function LightboxModal({
     [playingAudioToken, stopAudio],
   );
 
-  // Stable API instances
-  const mediaFilesApi = useMemo(() => new MediaFilesApi(), []);
-  const promptsApi = useMemo(() => new PromptsApi(), []);
 
   useEffect(() => {
     if (isOpen) {
@@ -216,67 +201,6 @@ export function LightboxModal({
     };
   }, []);
 
-  // Fetch prompt when mediaId changes — debounced to avoid API spam during
-  // rapid next/prev navigation, with cancellation for stale responses.
-  useEffect(() => {
-    if (!mediaId) {
-      setPromptData(null);
-      setHasPromptToken(false);
-      setPromptLoading(false);
-      setCreator(null);
-      return;
-    }
-
-    // Immediately show skeletons & clear stale data
-    setPromptLoading(true);
-    setPromptData(null);
-    setCreator(null);
-
-    let cancelled = false;
-
-    const timer = setTimeout(async () => {
-      try {
-        const mediaResponse = await mediaFilesApi.GetMediaFileByToken({
-          mediaFileToken: mediaId,
-        });
-        if (cancelled) return;
-
-        if (mediaResponse.success && mediaResponse.data) {
-          setCreator(mediaResponse.data.maybe_creator_user || null);
-        }
-
-        if (mediaResponse.success && mediaResponse.data?.maybe_prompt_token) {
-          setHasPromptToken(true);
-          const promptResponse = await promptsApi.GetPromptsByToken({
-            token: mediaResponse.data.maybe_prompt_token,
-          });
-          if (cancelled) return;
-
-          if (promptResponse.success && promptResponse.data) {
-            setPromptData(promptResponse.data);
-          } else {
-            setPromptData(null);
-          }
-        } else {
-          setHasPromptToken(false);
-          setPromptData(null);
-        }
-      } catch (error) {
-        if (cancelled) return;
-        console.error("Error fetching prompt:", error);
-        setHasPromptToken(false);
-        setPromptData(null);
-      } finally {
-        if (!cancelled) setPromptLoading(false);
-      }
-    }, 180);
-
-    return () => {
-      cancelled = true;
-      clearTimeout(timer);
-    };
-  }, [mediaId, mediaFilesApi, promptsApi]);
-
   // Detect if prompt text is clamped (overflows the 4-line clamp)
   useEffect(() => {
     if (!promptRef.current || !prompt || promptLoading) {
@@ -293,73 +217,6 @@ export function LightboxModal({
     });
     return () => cancelAnimationFrame(raf);
   }, [prompt, promptLoading, isPromptExpanded]);
-
-  // Fetch batch images — debounced + cancellable like fetchPrompt above.
-  useEffect(() => {
-    if (!batchImageToken) {
-      setBatchImages(null);
-      setBatchTokens(null);
-      return;
-    }
-
-    // Clear stale batch data immediately
-    setBatchImages(null);
-    setBatchTokens(null);
-
-    let cancelled = false;
-
-    const timer = setTimeout(async () => {
-      try {
-        const response = await mediaFilesApi.GetMediaFilesByBatchToken({
-          batchToken: batchImageToken,
-        });
-        if (cancelled) return;
-
-        if (response.success && response.data?.length) {
-          const items = response.data
-            .map((file: any) => ({
-              url: file.media_links?.cdn_url,
-              token: file.token,
-            }))
-            .filter(
-              (item): item is { url: string; token: string } =>
-                Boolean(item.url) && Boolean(item.token),
-            );
-
-          if (items.length > 0) {
-            const primaryToken = mediaId;
-            const primaryUrl = imageUrl;
-
-            const sortedItems = [...items].sort((a, b) => {
-              if (primaryToken === a.token) return -1;
-              if (primaryToken === b.token) return 1;
-              if (primaryUrl === a.url) return -1;
-              if (primaryUrl === b.url) return 1;
-              return 0;
-            });
-
-            setBatchImages(sortedItems.map((item) => item.url));
-            setBatchTokens(sortedItems.map((item) => item.token));
-          } else {
-            setBatchImages(null);
-            setBatchTokens(null);
-          }
-        } else {
-          setBatchImages(null);
-          setBatchTokens(null);
-        }
-      } catch (error: unknown) {
-        if (cancelled) return;
-        setBatchImages(null);
-        setBatchTokens(null);
-      }
-    }, 200);
-
-    return () => {
-      cancelled = true;
-      clearTimeout(timer);
-    };
-  }, [batchImageToken, mediaId, imageUrl, mediaFilesApi]);
 
   const effectiveImageUrls = useMemo(() => {
     if (batchImages && batchImages.length > 0) {
@@ -566,8 +423,7 @@ export function LightboxModal({
               <div className="flex h-full w-full items-center justify-center bg-black">
                 <span className="text-base-fg/60">Image not available</span>
               </div>
-            ) : mediaClass === "dimensional" ||
-              mediaClass === "mesh" ||
+            ) : mediaClass === "mesh" ||
               mediaClass === "splat" ? (
               <div className="h-full w-full">
                 <Viewer3D
@@ -697,7 +553,6 @@ export function LightboxModal({
 
             {!mediaLoaded &&
               selectedImageUrl &&
-              mediaClass !== "dimensional" &&
               mediaClass !== "mesh" &&
               mediaClass !== "splat" &&
               mediaClass !== "audio" && (
@@ -1002,7 +857,7 @@ export function LightboxModal({
                         </div>
                       )}
 
-                      <InfoSection
+                      <LightboxMediaInfo
                         modelType={modelType}
                         generationProvider={generationProvider}
                         aspectRatio={aspectRatio}
@@ -1019,7 +874,7 @@ export function LightboxModal({
               )}
 
               {!hasPromptToken && !promptLoading && (
-                <InfoSection
+                <LightboxMediaInfo
                   modelType={null}
                   generationProvider={null}
                   aspectRatio={null}
@@ -1278,116 +1133,6 @@ export function LightboxModal({
         </Modal>
       )}
     </>
-  );
-}
-
-interface InfoSectionProps {
-  modelType: string | null;
-  generationProvider: string | null;
-  aspectRatio: string | null;
-  resolution: string | null;
-  durationSeconds: number | null;
-  generateAudio: boolean | null;
-  mediaWidth: number | null;
-  mediaHeight: number | null;
-  createdAt?: string;
-}
-
-function InfoSection({
-  modelType,
-  generationProvider,
-  aspectRatio,
-  resolution,
-  durationSeconds,
-  generateAudio,
-  mediaWidth,
-  mediaHeight,
-  createdAt,
-}: InfoSectionProps) {
-  const hasAnyInfo =
-    !!modelType ||
-    !!generationProvider ||
-    !!aspectRatio ||
-    !!resolution ||
-    durationSeconds != null ||
-    generateAudio != null ||
-    (!!mediaWidth && !!mediaHeight) ||
-    !!createdAt;
-
-  if (!hasAnyInfo) return null;
-
-  return (
-    <div className="space-y-2">
-      <div className="flex items-center gap-2 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/60">
-        <InfoIcon />
-        <span>Information</span>
-      </div>
-      <div className="flex flex-col bg-black/20 border border-white/10 overflow-hidden">
-        {modelType && (
-          <InfoRow
-            label="Model"
-            value={
-              <>
-                <img
-                  src={getCreatorIconPathForModelId(modelType)}
-                  alt="Model creator logo"
-                  className="h-4 w-4 invert"
-                />
-                <span>{getModelDisplayName(modelType)}</span>
-              </>
-            }
-          />
-        )}
-        {generationProvider && (
-          <InfoRow
-            label="Provider"
-            value={
-              <>
-                {getProviderIconByName(generationProvider, "h-4 w-4 invert")}
-                <span>{getProviderDisplayName(generationProvider)}</span>
-              </>
-            }
-          />
-        )}
-        {aspectRatio && (
-          <InfoRow
-            label="Aspect Ratio"
-            value={formatAspectRatio(aspectRatio)}
-          />
-        )}
-        {resolution && (
-          <InfoRow label="Resolution" value={formatResolution(resolution)} />
-        )}
-        {durationSeconds != null && (
-          <InfoRow label="Duration" value={formatDuration(durationSeconds)} />
-        )}
-        {generateAudio != null && (
-          <InfoRow label="Audio" value={generateAudio ? "On" : "Off"} />
-        )}
-        {mediaWidth && mediaHeight && (
-          <InfoRow label="Size" value={`${mediaWidth} × ${mediaHeight}`} />
-        )}
-        {createdAt && (
-          <InfoRow
-            label="Created"
-            value={dayjs(createdAt).format("MMM D, YYYY h:mm:ss A")}
-          />
-        )}
-      </div>
-    </div>
-  );
-}
-
-function InfoRow({ label, value }: { label: string; value: ReactNode }) {
-  return (
-    <div className="flex items-start justify-between gap-4 px-3 py-2.5 border-b border-white/10 last:border-0">
-      <span className="shrink-0 pt-0.5 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/60">
-        {label}
-      </span>
-      <span className="min-w-0 text-right text-sm text-base-fg font-medium flex items-center justify-end gap-2">
-        {value}
-      </span>
-    </div>
   );
 }
 

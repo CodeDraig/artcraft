@@ -182,10 +182,7 @@ export function getPlaceholderForMediaClass(mediaClass?: string): string {
 // File extensions for actual 3D-model assets (meshes + gaussian splats).
 export const MODEL_3D_EXTENSIONS = [".glb", ".gltf", ".fbx", ".spz", ".obj", ".ply"];
 
-/** Whether a URL points at a real 3D-model asset (vs. e.g. a cover screenshot).
- *  Used to keep 3D-model cover images — which the backend can surface as
- *  "dimensional" media files whose asset is actually a .png — out of the 3D
- *  feeds and library. */
+/** Whether a URL points at a 3D-model asset rather than a cover screenshot. */
 export function is3DModelUrl(url: string | null | undefined): boolean {
   if (!url) return false;
   const lower = url.toLowerCase();

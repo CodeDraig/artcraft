@@ -27,7 +27,6 @@ import {
   VIDEO_MODELS_BY_ID,
   CommonAspectRatio,
   CommonResolution,
-  videoResolutionValue,
 } from "@storyteller/model-list";
 import {
   galleryModalLightboxVisible,
@@ -59,7 +58,7 @@ export async function downloadMediaFileToDisk(url: string, mediaClass?: string, 
     } else {
       await DownloadUrl(url, { model });
     }
-    if (mediaClass === FilterMediaClasses.DIMENSIONAL) {
+    if (mediaClass === FilterMediaClasses.MESH || mediaClass === FilterMediaClasses.SPLAT) {
       toast.success(`Downloaded 3D model`);
     } else {
       toast.success(`Downloaded ${mediaClass}`);
@@ -260,10 +259,10 @@ export function applyRecreateFromPromptData(data: {
         }
       }
 
-      // Map API resolution (like "one_k") → video store format (like "1080p")
+      // Restore the API resolution directly.
       if (promptData.maybe_resolution && videoModel?.resolutionOptions) {
-        const value = videoResolutionValue(promptData.maybe_resolution);
-        const option = videoModel.resolutionOptions.find((option) => videoResolutionValue(option) === value);
+        const value = promptData.maybe_resolution;
+        const option = videoModel.resolutionOptions.find((option) => option === value);
         videoStore.setResolution(option ?? value);
       }
 

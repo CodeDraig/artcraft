@@ -66,8 +66,6 @@ fn video_model_to_common_model_type(model: RouterVideoModel) -> Option<CommonMod
     RouterVideoModel::MinimaxH3Ultra => Some(CommonModelType::MinimaxH3Ultra),
     RouterVideoModel::Flux3 => Some(CommonModelType::Flux3),
     RouterVideoModel::Flux3Draft => Some(CommonModelType::Flux3Draft),
-    RouterVideoModel::Sora2 => Some(CommonModelType::Sora2),
-    RouterVideoModel::Sora2Pro => Some(CommonModelType::Sora2Pro),
     RouterVideoModel::Veo2 => Some(CommonModelType::Veo2),
     RouterVideoModel::Veo3 => Some(CommonModelType::Veo3),
     RouterVideoModel::Veo3Fast => Some(CommonModelType::Veo3Fast),
@@ -266,7 +264,6 @@ mod tests {
       (RouterVideoModel::Kling3p0Standard, CommonModelType::Kling3p0Standard),
       (RouterVideoModel::Veo3, CommonModelType::Veo3),
       (RouterVideoModel::Seedance2p0, CommonModelType::Seedance2p0),
-      (RouterVideoModel::Sora2, CommonModelType::Sora2),
     ];
     for (router_model, expected) in models {
       let builder = GenerateVideoRequestBuilder { model: router_model, ..base_builder() };

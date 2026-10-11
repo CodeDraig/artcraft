@@ -1,6 +1,5 @@
 import { ModelCreator } from "src/index.js";
-import { Model, ModelKind } from "./Model.js";
-import { ModelCategory } from "../legacy/ModelConfig.js";
+import { Model, ModelCategory, ModelKind } from "./Model.js";
 import { ModelTag } from "./metadata/ModelTag.js";
 import { SizeOption } from "./metadata/SizeOption.js";
 import { GenerationProvider } from "@storyteller/api-enums";
@@ -66,7 +65,7 @@ export class VideoModel extends Model {
   // Maximum total duration (seconds) of all reference audios combined
   readonly maxAudioRefDuration?: number;
 
-  // Available resolution options (e.g. ["480p", "720p"])
+  // API resolution values (e.g. ["four_eighty_p", "seven_twenty_p"])
   readonly resolutionOptions?: string[];
 
   // Whether the model supports using the CommonAspectRatio enum

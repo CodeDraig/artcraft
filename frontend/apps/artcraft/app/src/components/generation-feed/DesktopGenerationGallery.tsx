@@ -213,7 +213,7 @@ function ItemActions({
   const [shareCopied, setShareCopied] = useState(false);
 
   const isVideo = item.mediaClass === "video";
-  const is3D = item.mediaClass === "dimensional";
+  const is3D = (item.mediaClass === "mesh" || item.mediaClass === "splat");
   const isAudio = item.mediaClass === "audio";
   // Audio v1: no recreate / make-video — share + download only.
   const recreateMediaClass: "image" | "video" | null = isVideo

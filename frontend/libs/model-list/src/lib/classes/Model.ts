@@ -1,7 +1,8 @@
 import { ModelCreator } from "./metadata/ModelCreator.js";
-import { ModelCategory, ModelConfig } from "../legacy/ModelConfig.js";
 import { ModelTag } from "./metadata/ModelTag.js";
 import { GenerationProvider } from "@storyteller/api-enums";
+
+export type ModelCategory = "image" | "video" | "gaussian" | "3d_object";
 
 export type ModelKind =
   | "model"
@@ -92,28 +93,4 @@ export class Model {
     return this.providers ?? [GenerationProvider.Artcraft];
   }
 
-  toLegacyBadges(): { label: string }[] {
-    return this.selectorBadges.map((b) => ({ label: b }));
-  }
-
-  // TODO: This is a method to support migration. Kill it after we no longer need it.
-  toLegacyModelConfig(): ModelConfig {
-    return {
-      id: this.id,
-      label: this.selectorName,
-      description: this.selectorDescription,
-      badges: this.toLegacyBadges(),
-      category: this.category,
-      info: {
-        name: this.fullName,
-        tauri_id: this.tauriId,
-        creator: this.creator,
-      },
-      capabilities: {
-        maxGenerationCount: 9, // NB: Sentinel value to detect continued use
-        defaultGenerationCount: 9, // NB: Sentinel value to detect continued use
-      },
-      tags: [],
-    };
-  }
 }

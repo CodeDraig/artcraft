@@ -13,7 +13,6 @@ function getCoverThumbnail(item: any): string | null {
   return (
     cover.maybe_links?.maybe_thumbnail_template?.replace("{WIDTH}", "512") ??
     cover.maybe_links?.cdn_url ??
-    cover.maybe_cover_image_public_bucket_url ??
     null
   );
 }
@@ -22,10 +21,8 @@ function getCoverThumbnail(item: any): string | null {
  * Session-scoped, cursor-paginated feed of the user's 3D media of one class:
  * "mesh" (`/v1/media_files/mesh/list`) or "splat" (`/v1/media_files/splat/list`).
  *
- * Successor to `useGalleryData` + `filterMediaClasses: ["dimensional"]` for
- * the 3D create pages: the class scoping happens server-side (the deprecated
- * "dimensional" class is no longer written), cover screenshots can't leak in
- * as their own entries, and mesh vs splat feeds can't see each other.
+ * Class scoping happens server-side, so cover screenshots cannot appear as
+ * their own entries and mesh and splat feeds remain separate.
  * Returns the same surface as `useGalleryData`.
  */
 export function useSessionMediaByClass(options: {

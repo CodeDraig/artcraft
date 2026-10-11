@@ -8,7 +8,6 @@ pub fn to_generation_service_provider(provider: GenerationProvider) -> Generatio
     GenerationProvider::Fal => GenerationServiceProvider::Fal,
     GenerationProvider::Grok => GenerationServiceProvider::Grok,
     GenerationProvider::Midjourney => GenerationServiceProvider::Midjourney,
-    GenerationProvider::Sora => GenerationServiceProvider::Sora,
     GenerationProvider::WorldLabs => GenerationServiceProvider::WorldLabs,
     GenerationProvider::Higgsfield => GenerationServiceProvider::Higgsfield,
     GenerationProvider::Krea => GenerationServiceProvider::Krea,

@@ -46,15 +46,28 @@ describe("project document serialization", () => {
     expect(restored?.media).toEqual(media);
   });
 
-  test("accepts legacy raw TProject envelopes", () => {
+  test("rejects raw projects without modifying them", () => {
     const project = buildSampleProject();
+    const before = JSON.stringify(project);
+    expect(deserializeProjectDocument(project)).toBeNull();
+    expect(JSON.stringify(project)).toBe(before);
+    expect(project.metadata.createdAt).toEqual(CREATED_AT);
+  });
 
-    const restored = deserializeProjectDocument(project);
+  test("rejects missing or unsupported document versions", () => {
+    const document = serializeProjectDocument({ project: buildSampleProject(), media: [] });
+    for (const version of [undefined, 0, 2, "1"]) {
+      expect(deserializeProjectDocument({ ...document, version })).toBeNull();
+    }
+  });
 
-    expect(restored).not.toBeNull();
-    expect(restored?.project.metadata.name).toBe(project.metadata.name);
-    expect(restored?.project.metadata.createdAt).toEqual(CREATED_AT);
-    expect(restored?.media).toEqual([]);
+  test("rejects incomplete documents and invalid dates", () => {
+    const document = serializeProjectDocument({ project: buildSampleProject(), media: [] });
+    expect(deserializeProjectDocument({ ...document, media: undefined })).toBeNull();
+    expect(deserializeProjectDocument({ ...document, project: { metadata: {} } })).toBeNull();
+    expect(deserializeProjectDocument({ ...document, project: { ...document.project, scenes: [null] } })).toBeNull();
+    document.project.metadata.createdAt = "invalid";
+    expect(deserializeProjectDocument(document)).toBeNull();
   });
 
   test("rejects unrecognized payloads", () => {
@@ -92,6 +105,7 @@ describe("project document serialization", () => {
 
     const serialized = document.project.scenes[0].tracks.audio[0].elements[0];
     expect("buffer" in serialized).toBe(false);
+    expect(audioTrack.elements[0].buffer).toEqual({ fake: "audio-buffer" });
   });
 
   test("mediaAssetToData pulls size from the File and drops thumbnails", () => {

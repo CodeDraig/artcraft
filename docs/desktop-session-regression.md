@@ -42,7 +42,7 @@ values from one place, `crates/lib/artcraft_client_identity`
 - The vendored HTTP plugin only replaces the webview's own origin (packaged
   `tauri://localhost` etc., or a loopback Vite origin), and only sets the
   User-Agent when the frontend didn't.
-- Native third-party Rust clients (Grok, Midjourney, Sora, World Labs, Kinovi)
+- Native third-party Rust clients (Grok, Midjourney, World Labs, Kinovi)
   set their own headers and are not affected.
 - Older desktop releases keep working: the server still allows the studio and
   Tauri origins, and requests without an Origin.

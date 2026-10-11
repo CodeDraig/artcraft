@@ -10,9 +10,6 @@ use crate::core::utils::window::get_webview_window_hostname::get_webview_window_
 use crate::services::midjourney::state::midjourney_credential_manager::MidjourneyCredentialManager;
 use crate::services::midjourney::state::midjourney_user_info::MidjourneyUserInfo;
 use crate::services::midjourney::windows::extract_midjourney_webview_cookies::extract_midjourney_webview_cookies;
-use crate::services::sora::events::sora_login_success_event::SoraLoginSuccessEvent;
-use crate::services::sora::state::sora_credential_manager::SoraCredentialManager;
-use crate::services::sora::windows::sora_login_window::extract_sora_webview_cookies::extract_sora_webview_cookies;
 use crate::services::storyteller::windows::open_storyteller_billing_window::BILLING_WINDOW_NAME;
 use anyhow::anyhow;
 use cookie_store::cookie_store::CookieStore;
@@ -21,8 +18,6 @@ use errors::AnyhowResult;
 use log::{error, info};
 use midjourney_client::client::midjourney_hostname::MidjourneyHostname;
 use midjourney_client::credentials::cookie_store_has_auth_cookies::cookie_store_has_auth_cookies;
-use openai_sora_client::creds::sora_credential_set::SoraCredentialSet;
-use openai_sora_client::recipes::maybe_upgrade_or_renew_session::maybe_upgrade_or_renew_session;
 use tauri::{AppHandle, Manager, WebviewWindow};
 
 pub async fn storyteller_billing_window_thread(

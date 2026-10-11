@@ -2,6 +2,7 @@ use crate::core::state::app_preferences::app_preferences_serializable::AppPrefer
 use crate::core::state::app_preferences::preferred_download_directory::{PreferredDownloadDirectory, SystemDownloadDirectory};
 use crate::core::state::app_preferences::preferred_download_filename::PreferredDownloadFilename;
 use crate::core::state::data_dir::app_data_root::AppDataRoot;
+use log::error;
 
 #[derive(Clone)]
 pub struct AppPreferences {
@@ -33,9 +34,6 @@ pub struct AppPreferences {
   /// Key pointing to file; defined in the frontend code.
   pub generation_failure_sound: Option<String>,
   
-  /// Key pointing to file; defined in the frontend code.
-  #[deprecated]
-  pub generation_enqueue_sound: Option<String>,
 }
 
 impl Default for AppPreferences {
@@ -50,7 +48,6 @@ impl Default for AppPreferences {
       enqueue_failure_sound: Some("spike_throw".to_string()),
       generation_success_sound: Some("special_flower".to_string()),
       generation_failure_sound: Some("crumble".to_string()),
-      generation_enqueue_sound: Some("done".to_string()),
       delete_file_sound: Some("trash".to_string()),
     }
   }
@@ -71,7 +68,7 @@ impl AppPreferences {
         Self::default()
       }
       Err(err) => {
-        println!("Error loading app preferences: {}", err);
+        error!("Error loading app preferences: {}", err);
         Self::default()
       }
     }

@@ -6,7 +6,6 @@ export enum GenerationProvider {
   Artcraft = "artcraft",
   Grok = "grok",
   Midjourney = "midjourney",
-  Sora = "sora",
   WorldLabs = "world_labs",
   Fal = "fal",
   Higgsfield = "higgsfield",

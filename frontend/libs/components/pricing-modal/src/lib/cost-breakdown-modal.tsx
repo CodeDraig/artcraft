@@ -1,3 +1,4 @@
+import { formatResolution } from "@storyteller/common";
 import { useMeshCostEstimate } from "./useMeshCostEstimate";
 import { Modal } from "@storyteller/ui-modal";
 import { useMemo } from "react";
@@ -46,7 +47,6 @@ const PROVIDER_DISPLAY_NAMES: Record<string, string> = {
   fal: "FAL",
   grok: "Grok",
   midjourney: "Midjourney",
-  sora: "Sora",
   worldlabs: "World Labs",
 };
 
@@ -171,7 +171,7 @@ export function CostBreakdownModal({ activeTabId }: CostBreakdownModalProps) {
         };
       case ModelPage.TextToImage:
         return {
-          resolution: promptImage.resolution,
+          resolution: promptImage.commonResolution,
           generationCount: promptImage.generationCount,
           label: "Images",
         };
@@ -201,7 +201,7 @@ export function CostBreakdownModal({ activeTabId }: CostBreakdownModalProps) {
         };
       default:
         return {
-          resolution: "1k",
+          resolution: "one_k",
           generationCount: 1,
           label: "Items",
         };
@@ -362,7 +362,7 @@ export function CostBreakdownModal({ activeTabId }: CostBreakdownModalProps) {
                 <div className="flex justify-between items-center">
                   <span className="text-base-fg/60">Resolution</span>
                   <span className="text-base-fg font-medium uppercase">
-                    {storeData.resolution}
+                    {formatResolution(storeData.resolution)}
                   </span>
                 </div>
               )}

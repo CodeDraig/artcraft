@@ -345,7 +345,6 @@ function getTaskMediaType(t: TaskQueueItem): "image" | "video" | "other" {
   const is3D =
     taskTypeStr.includes("3d") ||
     taskTypeStr.includes("object") ||
-    taskTypeStr.includes("dimensional") ||
     isSplat;
   if (is3D) return "other";
   if (taskTypeStr.includes("video")) return "video";

@@ -37,8 +37,6 @@ export enum CommonVideoModel {
   Seedance2p5Preview = "seedance_2p5_preview",
   Seedance2p5 = "seedance_2p5",
   Seedance2p5Ultra = "seedance_2p5_u",
-  Sora2 = "sora_2",
-  Sora2Pro = "sora_2_pro",
   Veo2 = "veo_2",
   Veo3 = "veo_3",
   Veo3Fast = "veo_3_fast",

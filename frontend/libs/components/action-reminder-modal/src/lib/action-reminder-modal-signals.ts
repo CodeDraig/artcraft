@@ -36,16 +36,3 @@ export function showActionReminder(options: ShowActionReminderOptions): void {
   };
   isActionReminderOpen.value = true;
 }
-
-// Example of how to trigger it - BFlat:
-// import { showGlobalActionReminder } from "@storyteller/ui-action-reminder-modal";
-// import openAiLogo from 'path/to/logo.svg';
-//
-// function someAction() {
-//   showActionReminder({
-//     reminderType: 'soraLogin',
-//     onPrimaryAction: () => console.log('Login with Sora!'),
-//     openAiLogo: openAiLogo,
-//     title: 'Sora Login Needed'
-//   });
-// }

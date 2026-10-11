@@ -5,29 +5,19 @@ use crate::core::state::data_dir::app_data_root::AppDataRoot;
 use errors::AnyhowResult;
 use serde_derive::{Deserialize, Serialize};
 
-/// Vector clock versioning string rather than semver.
-/// - Version 1 - initial version.
-/// - Version 2 - added "delete_file_sound", marked optionals "skip_serializing_if"
-/// - Version 3 - added auto download and filename convention.
-const CURRENT_VERSION: &str = "3";
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AppPreferencesSerializable {
-  /// Versioning string.
-  pub version: String,
+  version: PreferencesVersion,
   
   /// The downloads directory to use when a user downloads a file.
-  pub preferred_download_directory: Option<PreferredDownloadDirectory>,
+  pub preferred_download_directory: PreferredDownloadDirectory,
 
-  #[serde(rename = "preferred_download_filename", skip_serializing_if = "Option::is_none")]
-  pub maybe_preferred_download_filename: Option<PreferredDownloadFilename>,
+  pub preferred_download_filename: PreferredDownloadFilename,
 
-  #[serde(rename = "auto_download", skip_serializing_if = "Option::is_none")]
-  pub maybe_auto_download: Option<bool>,
+  pub auto_download: bool,
 
   /// Play sounds on events.
-  #[serde(skip_serializing_if = "Option::is_none")]
-  pub play_sounds: Option<bool>,
+  pub play_sounds: bool,
 
   /// Key pointing to file; defined in the frontend code.
   #[serde(skip_serializing_if = "Option::is_none")]
@@ -41,9 +31,12 @@ pub struct AppPreferencesSerializable {
   #[serde(skip_serializing_if = "Option::is_none")]
   pub generation_failure_sound: Option<String>,
   
-  /// Key pointing to file; defined in the frontend code.
-  #[serde(skip_serializing_if = "Option::is_none")]
-  pub generation_enqueue_sound: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+enum PreferencesVersion {
+  #[serde(rename = "3")]
+  Current,
 }
 
 impl AppPreferencesSerializable {
@@ -60,42 +53,28 @@ impl AppPreferencesSerializable {
 
   pub fn from_preferences(preferences: &AppPreferences) -> Self {
     Self {
-      version: CURRENT_VERSION.to_string(),
-      preferred_download_directory: Some(preferences.preferred_download_directory.clone()),
-      maybe_preferred_download_filename: Some(preferences.preferred_download_filename.clone()),
-      maybe_auto_download: Some(preferences.auto_download),
-      play_sounds: Some(preferences.play_sounds),
+      version: PreferencesVersion::Current,
+      preferred_download_directory: preferences.preferred_download_directory.clone(),
+      preferred_download_filename: preferences.preferred_download_filename.clone(),
+      auto_download: preferences.auto_download,
+      play_sounds: preferences.play_sounds,
       delete_file_sound: preferences.delete_file_sound.clone(),
       generation_success_sound: preferences.generation_success_sound.clone(),
       generation_failure_sound: preferences.generation_failure_sound.clone(),
-      generation_enqueue_sound: preferences.generation_enqueue_sound.clone(),
     }
   }
 
   pub fn to_preferences(&self) -> AppPreferences {
-    let mut preferences = AppPreferences::default();
-
-    if let Some(preferred_download_directory) = &self.preferred_download_directory {
-      preferences.preferred_download_directory = preferred_download_directory.clone();
+    AppPreferences {
+      preferred_download_directory: self.preferred_download_directory.clone(),
+      preferred_download_filename: self.preferred_download_filename.clone(),
+      auto_download: self.auto_download,
+      play_sounds: self.play_sounds,
+      delete_file_sound: self.delete_file_sound.clone(),
+      generation_success_sound: self.generation_success_sound.clone(),
+      generation_failure_sound: self.generation_failure_sound.clone(),
+      ..AppPreferences::default()
     }
-
-    if let Some(play_sounds) = self.play_sounds {
-      preferences.play_sounds = play_sounds;
-    }
-
-    if let Some(filename) = &self.maybe_preferred_download_filename {
-      preferences.preferred_download_filename = filename.clone();
-    }
-    if let Some(auto_download) = self.maybe_auto_download {
-      preferences.auto_download = auto_download;
-    }
-
-    preferences.delete_file_sound = self.delete_file_sound.clone();
-    preferences.generation_success_sound = self.generation_success_sound.clone();
-    preferences.generation_failure_sound = self.generation_failure_sound.clone();
-    preferences.generation_enqueue_sound = self.generation_enqueue_sound.clone();
-
-    preferences
   }
 }
 
@@ -104,17 +83,16 @@ mod tests {
   use super::*;
 
   #[test]
-  fn old_preferences_keep_the_directory_and_default_auto_download_off() {
-    let old: AppPreferencesSerializable = serde_json::from_value(serde_json::json!({
-      "version": "2", "preferred_download_directory": { "custom": "/my/downloads" },
-      "play_sounds": false, "generation_success_sound": "special_flower",
-    })).unwrap();
-    let prefs = old.to_preferences();
-    assert!(!prefs.auto_download);
-    assert_eq!(prefs.preferred_download_filename, PreferredDownloadFilename::ArtcraftConvention);
-    assert_eq!(prefs.preferred_download_directory, PreferredDownloadDirectory::Custom("/my/downloads".into()));
-    assert!(!prefs.play_sounds);
-    assert_eq!(prefs.generation_success_sound.as_deref(), Some("special_flower"));
+  fn rejects_unsupported_preferences_without_rewriting_the_file() {
+    let directory = tempfile::tempdir().unwrap();
+    let data_root = AppDataRoot::create_existing(directory.path()).unwrap();
+    let path = data_root.settings_dir().get_app_preferences_path();
+    let mut value = serde_json::to_value(AppPreferences::default().to_serializable()).unwrap();
+    value["version"] = serde_json::json!("2");
+    let contents = serde_json::to_string(&value).unwrap();
+    std::fs::write(&path, &contents).unwrap();
+    assert!(AppPreferencesSerializable::load_from_file(&data_root).is_err());
+    assert_eq!(std::fs::read_to_string(path).unwrap(), contents);
   }
 
   #[test]

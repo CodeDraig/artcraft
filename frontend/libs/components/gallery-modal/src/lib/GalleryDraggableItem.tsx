@@ -5,7 +5,7 @@ import { LoadingSpinner } from "@storyteller/ui-loading-spinner";
 import { twMerge } from "tailwind-merge";
 import galleryDnd from "./galleryDnd";
 import { Tooltip } from "@storyteller/ui-tooltip";
-import { GalleryItem } from "./gallery-modal";
+import { GalleryItem } from "./GalleryItem";
 import { PopoverMenu } from "@storyteller/ui-popover";
 import { GalleryItemMenuItems } from "./GalleryItemMenuItems";
 import {
@@ -429,8 +429,7 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
       {/* Media class badge on hover — bottom-left */}
       {!disableTooltipAndBadge && item.mediaClass && (
         <div className="pointer-events-none absolute left-2 bottom-2 z-[1] bg-black/50 backdrop-blur-lg px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-white opacity-0 group-hover:opacity-100 transition-opacity duration-150">
-          {item.mediaClass === "dimensional" ||
-          item.mediaClass === "mesh" ||
+          {item.mediaClass === "mesh" ||
           item.mediaClass === "splat"
             ? "3D"
             : item.mediaClass}
@@ -454,8 +453,7 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
                 <span>
                   <span className="font-bold">Drag</span>
                   <span className="opacity-50">
-                    {item.mediaClass === "dimensional" ||
-                    item.mediaClass === "mesh" ||
+                    {item.mediaClass === "mesh" ||
                     item.mediaClass === "splat"
                       ? " to add to scene"
                       : " to add"}

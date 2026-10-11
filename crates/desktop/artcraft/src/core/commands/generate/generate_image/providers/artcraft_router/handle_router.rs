@@ -61,7 +61,6 @@ fn map_provider_to_missing_credentials_error(provider: GenerationProvider) -> Ge
     GenerationProvider::Fal => GenerateError::MissingCredentials(MissingCredentialsReason::NeedsFalApiKey),
     GenerationProvider::Grok => GenerateError::MissingCredentials(MissingCredentialsReason::NeedsGrokCredentials),
     GenerationProvider::Midjourney => GenerateError::MissingCredentials(MissingCredentialsReason::NeedsMidjourneyCredentials),
-    GenerationProvider::Sora => GenerateError::MissingCredentials(MissingCredentialsReason::NeedsSoraCredentials),
     GenerationProvider::WorldLabs => GenerateError::MissingCredentials(MissingCredentialsReason::NeedsWorldLabsCredentials),
     _ => GenerateError::NoProviderAvailable,
   }

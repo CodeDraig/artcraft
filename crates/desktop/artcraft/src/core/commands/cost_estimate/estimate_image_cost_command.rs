@@ -1,7 +1,7 @@
 use enums::common::generation_provider::GenerationProvider;
 use crate::core::commands::generate::omni::OmniResponse;
 use crate::core::commands::generate::omni::{self, Modality, OmniRequest, OmniResult};
-use crate::core::commands::generate::omni::dispatch::{adapt_legacy_response, decode_native};
+use crate::core::commands::generate::omni::native::{serialize_native_response, decode_native};
 use tauri::{AppHandle, Manager};
 use crate::core::commands::response::failure_response_wrapper::{CommandErrorResponseWrapper, CommandErrorStatus};
 use crate::core::commands::response::shorthand::ResponseOrError;
@@ -36,10 +36,10 @@ pub async fn estimate_image_cost_command(request: OmniRequest, app: AppHandle) -
       "has_watermark": false,
     })).into());
   }
-  if request.uses_artcraft() && !request.uses_legacy_image_endpoint() {
+  if request.uses_artcraft() {
     return omni::estimate(request, Modality::Image, &app).await;
   }
-  adapt_legacy_response(estimate_image_cost_native(decode_native(request)?, app.state()).await)
+  serialize_native_response(estimate_image_cost_native(decode_native(request)?, app.state()).await)
 }
 
 async fn estimate_image_cost_native(

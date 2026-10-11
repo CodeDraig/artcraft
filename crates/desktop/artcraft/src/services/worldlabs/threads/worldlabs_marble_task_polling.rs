@@ -55,7 +55,6 @@ use artcraft_client::recipes::upload_media_file_from_file::upload_media_file_fro
 use tauri::AppHandle;
 use tokens::tokens::batch_generations::BatchGenerationToken;
 use url::Url;
-use url_utils::download_extension::extract_download_extension_from_url::extract_download_extension_from_url_str;
 use worldlabs_consumer_client::api::api_types::world_id::WorldObjectId;
 use worldlabs_consumer_client::api::requests::worlds::poll_world_status::{poll_world_status, PollWorldStatusArgs};
 use worldlabs_consumer_client::credentials::world_labs_bearer_token::WorldLabsBearerToken;

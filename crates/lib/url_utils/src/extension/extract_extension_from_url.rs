@@ -27,6 +27,10 @@ const KNOWN_VIDEO_EXTENSIONS: &[Extension] = &[
 
 /// Controls which extensions are accepted when extracting from a URL.
 pub enum ExtractExtensions {
+  /// Safe suffixes for downloaded images, video, audio, and text.
+  /// JPEG downloads use the canonical `jpg` suffix.
+  Download,
+
   /// Accept any extension-like string found in the URL path.
   All,
 
@@ -70,6 +74,11 @@ pub fn extract_extension_from_url(url: &Url, accept: &ExtractExtensions) -> Opti
   let candidate = Extension::new(&lower);
 
   match accept {
+    ExtractExtensions::Download => match lower.as_str() {
+      "jpeg" => Some(Extension::from_static("jpg", ".jpg")),
+      "jpg" | "png" | "mp4" | "webm" | "mp3" | "wav" | "json" | "txt" => Some(candidate),
+      _ => None,
+    },
     ExtractExtensions::All => Some(candidate),
     ExtractExtensions::Set(set) => {
       if set.contains(&candidate) { Some(candidate) } else { None }
@@ -103,6 +112,25 @@ fn slice_contains(extensions: &[Extension], candidate: &Extension) -> bool {
 #[cfg(test)]
 mod tests {
   use super::*;
+
+  #[test]
+  fn download_suffixes_are_bounded_and_jpeg_is_canonical() {
+    for suffix in ["jpg", "png", "mp4", "webm", "mp3", "wav", "json", "txt"] {
+      let url = format!("https://example.com/file.{}?format=ignored", suffix.to_uppercase());
+      let extension = extract_extension_from_url_str(&url, &ExtractExtensions::Download).unwrap();
+      assert_eq!(extension.without_period(), suffix);
+    }
+    let jpeg = extract_extension_from_url_str("https://example.com/photo.JPEG", &ExtractExtensions::Download).unwrap();
+    assert_eq!(jpeg.without_period(), "jpg");
+    assert_eq!(jpeg.with_period(), ".jpg");
+  }
+
+  #[test]
+  fn download_rejects_unknown_or_missing_suffixes_and_invalid_urls() {
+    for url in ["https://example.com/file.exe", "https://example.com/file.webp", "https://example.com/raw?format=mp4", "not a URL"] {
+      assert!(extract_extension_from_url_str(url, &ExtractExtensions::Download).is_none());
+    }
+  }
 
   #[test]
   fn all_extracts_any_extension() {

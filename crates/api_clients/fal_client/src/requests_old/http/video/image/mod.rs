@@ -12,8 +12,6 @@ pub mod http_pixverse_v5_image_to_video;
 pub mod http_seedance_1_lite_image_to_video;
 pub mod http_seedance_1_pro_image_to_video;
 pub mod http_seedance_1p5_pro_image_to_video;
-pub mod http_sora_2_image_to_video;
-pub mod http_sora_2_pro_image_to_video;
 pub mod http_veo_2_image_to_video;
 pub mod http_veo_3_fast_image_to_video;
 pub mod http_veo_3_image_to_video;

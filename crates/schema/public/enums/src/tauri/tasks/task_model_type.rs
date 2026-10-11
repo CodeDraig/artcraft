@@ -16,17 +16,11 @@ pub enum TaskModelType {
   Flux1Dev,
   #[serde(rename = "flux_1_schnell")]
   Flux1Schnell,
-  #[serde(rename = "flux_dev_juggernaut")]
-  FluxDevJuggernaut,
   // NB: For inpainting for now
-  #[serde(rename = "flux_pro_1")]
-  FluxPro1,
   #[serde(rename = "flux_pro_1.1")]
   FluxPro11,
   #[serde(rename = "flux_pro_1.1_ultra")]
   FluxPro11Ultra,
-  #[serde(rename = "flux_pro_kontext_max")]
-  FluxProKontextMax,
   #[serde(rename = "gemini_25_flash")]
   Gemini25Flash,
   #[serde(rename = "nano_banana")]
@@ -99,10 +93,6 @@ pub enum TaskModelType {
   Seedance2p0,
   #[serde(rename = "seedance_2p0_fast")]
   Seedance2p0Fast,
-  #[serde(rename = "sora_2")]
-  Sora2,
-  #[serde(rename = "sora_2_pro")]
-  Sora2Pro,
   #[serde(rename = "veo_2")]
   Veo2,
   #[serde(rename = "veo_3")]
@@ -147,11 +137,8 @@ impl TaskModelType {
       // Image models
       Self::Flux1Dev => "flux_1_dev",
       Self::Flux1Schnell => "flux_1_schnell",
-      Self::FluxDevJuggernaut => "flux_dev_juggernaut",
-      Self::FluxPro1 => "flux_pro_1",
       Self::FluxPro11 => "flux_pro_1.1",
       Self::FluxPro11Ultra => "flux_pro_1.1_ultra",
-      Self::FluxProKontextMax => "flux_pro_kontext_max",
       Self::Gemini25Flash => "gemini_25_flash",
       Self::NanoBanana => "nano_banana",
       Self::NanoBanana2 => "nano_banana_2",
@@ -187,8 +174,6 @@ impl TaskModelType {
       Self::Seedance1p5Pro => "seedance_1p5_pro",
       Self::Seedance2p0 => "seedance_2p0",
       Self::Seedance2p0Fast => "seedance_2p0_fast",
-      Self::Sora2 => "sora_2",
-      Self::Sora2Pro => "sora_2_pro",
       Self::Veo2 => "veo_2",
       Self::Veo3 => "veo_3",
       Self::Veo3Fast => "veo_3_fast",
@@ -209,11 +194,8 @@ impl TaskModelType {
       // Image models
       "flux_1_dev" => Ok(Self::Flux1Dev),
       "flux_1_schnell" => Ok(Self::Flux1Schnell),
-      "flux_dev_juggernaut" => Ok(Self::FluxDevJuggernaut),
-      "flux_pro_1" => Ok(Self::FluxPro1),
       "flux_pro_1.1" => Ok(Self::FluxPro11),
       "flux_pro_1.1_ultra" => Ok(Self::FluxPro11Ultra),
-      "flux_pro_kontext_max" => Ok(Self::FluxProKontextMax),
       "gemini_25_flash" => Ok(Self::Gemini25Flash),
       "nano_banana" => Ok(Self::NanoBanana),
       "nano_banana_2" => Ok(Self::NanoBanana2),
@@ -249,8 +231,6 @@ impl TaskModelType {
       "seedance_1p5_pro" => Ok(Self::Seedance1p5Pro),
       "seedance_2p0" => Ok(Self::Seedance2p0),
       "seedance_2p0_fast" => Ok(Self::Seedance2p0Fast),
-      "sora_2" => Ok(Self::Sora2),
-      "sora_2_pro" => Ok(Self::Sora2Pro),
       "veo_2" => Ok(Self::Veo2),
       "veo_3" => Ok(Self::Veo3),
       "veo_3_fast" => Ok(Self::Veo3Fast),
@@ -274,11 +254,8 @@ impl TaskModelType {
       // Image models
       Self::Flux1Dev,
       Self::Flux1Schnell,
-      Self::FluxDevJuggernaut,
-      Self::FluxPro1,
       Self::FluxPro11,
       Self::FluxPro11Ultra,
-      Self::FluxProKontextMax,
       Self::Gemini25Flash,
       Self::NanoBanana,
       Self::NanoBanana2,
@@ -314,8 +291,6 @@ impl TaskModelType {
       Self::Seedance1p5Pro,
       Self::Seedance2p0,
       Self::Seedance2p0Fast,
-      Self::Sora2,
-      Self::Sora2Pro,
       Self::Veo2,
       Self::Veo3,
       Self::Veo3Fast,
@@ -345,11 +320,8 @@ mod tests {
       // Image models
       assert_serialization(TaskModelType::Flux1Dev, "flux_1_dev");
       assert_serialization(TaskModelType::Flux1Schnell, "flux_1_schnell");
-      assert_serialization(TaskModelType::FluxDevJuggernaut, "flux_dev_juggernaut");
-      assert_serialization(TaskModelType::FluxPro1, "flux_pro_1");
       assert_serialization(TaskModelType::FluxPro11, "flux_pro_1.1");
       assert_serialization(TaskModelType::FluxPro11Ultra, "flux_pro_1.1_ultra");
-      assert_serialization(TaskModelType::FluxProKontextMax, "flux_pro_kontext_max");
       assert_serialization(TaskModelType::Gemini25Flash, "gemini_25_flash");
       assert_serialization(TaskModelType::NanoBanana, "nano_banana");
       assert_serialization(TaskModelType::NanoBanana2, "nano_banana_2");
@@ -385,8 +357,6 @@ mod tests {
       assert_serialization(TaskModelType::Seedance1p5Pro, "seedance_1p5_pro");
       assert_serialization(TaskModelType::Seedance2p0, "seedance_2p0");
       assert_serialization(TaskModelType::Seedance2p0Fast, "seedance_2p0_fast");
-      assert_serialization(TaskModelType::Sora2, "sora_2");
-      assert_serialization(TaskModelType::Sora2Pro, "sora_2_pro");
       assert_serialization(TaskModelType::Veo2, "veo_2");
       assert_serialization(TaskModelType::Veo3, "veo_3");
       assert_serialization(TaskModelType::Veo3Fast, "veo_3_fast");
@@ -406,11 +376,8 @@ mod tests {
       // Image models
       assert_eq!(TaskModelType::Flux1Dev.to_str(), "flux_1_dev");
       assert_eq!(TaskModelType::Flux1Schnell.to_str(), "flux_1_schnell");
-      assert_eq!(TaskModelType::FluxDevJuggernaut.to_str(), "flux_dev_juggernaut");
-      assert_eq!(TaskModelType::FluxPro1.to_str(), "flux_pro_1");
       assert_eq!(TaskModelType::FluxPro11.to_str(), "flux_pro_1.1");
       assert_eq!(TaskModelType::FluxPro11Ultra.to_str(), "flux_pro_1.1_ultra");
-      assert_eq!(TaskModelType::FluxProKontextMax.to_str(), "flux_pro_kontext_max");
       assert_eq!(TaskModelType::Gemini25Flash.to_str(), "gemini_25_flash");
       assert_eq!(TaskModelType::NanoBanana.to_str(), "nano_banana");
       assert_eq!(TaskModelType::NanoBanana2.to_str(), "nano_banana_2");
@@ -443,8 +410,6 @@ mod tests {
       assert_eq!(TaskModelType::Seedance1p5Pro.to_str(), "seedance_1p5_pro");
       assert_eq!(TaskModelType::Seedance2p0.to_str(), "seedance_2p0");
       assert_eq!(TaskModelType::Seedance2p0Fast.to_str(), "seedance_2p0_fast");
-      assert_eq!(TaskModelType::Sora2.to_str(), "sora_2");
-      assert_eq!(TaskModelType::Sora2Pro.to_str(), "sora_2_pro");
       assert_eq!(TaskModelType::Veo2.to_str(), "veo_2");
       assert_eq!(TaskModelType::Veo3.to_str(), "veo_3");
       assert_eq!(TaskModelType::Veo3Fast.to_str(), "veo_3_fast");
@@ -464,11 +429,8 @@ mod tests {
       // Image models
       assert_eq!(TaskModelType::from_str("flux_1_dev").unwrap(), TaskModelType::Flux1Dev);
       assert_eq!(TaskModelType::from_str("flux_1_schnell").unwrap(), TaskModelType::Flux1Schnell);
-      assert_eq!(TaskModelType::from_str("flux_dev_juggernaut").unwrap(), TaskModelType::FluxDevJuggernaut);
-      assert_eq!(TaskModelType::from_str("flux_pro_1").unwrap(), TaskModelType::FluxPro1);
       assert_eq!(TaskModelType::from_str("flux_pro_1.1").unwrap(), TaskModelType::FluxPro11);
       assert_eq!(TaskModelType::from_str("flux_pro_1.1_ultra").unwrap(), TaskModelType::FluxPro11Ultra);
-      assert_eq!(TaskModelType::from_str("flux_pro_kontext_max").unwrap(), TaskModelType::FluxProKontextMax);
       assert_eq!(TaskModelType::from_str("gemini_25_flash").unwrap(), TaskModelType::Gemini25Flash);
       assert_eq!(TaskModelType::from_str("nano_banana").unwrap(), TaskModelType::NanoBanana);
       assert_eq!(TaskModelType::from_str("nano_banana_2").unwrap(), TaskModelType::NanoBanana2);
@@ -501,8 +463,6 @@ mod tests {
       assert_eq!(TaskModelType::from_str("seedance_1p5_pro").unwrap(), TaskModelType::Seedance1p5Pro);
       assert_eq!(TaskModelType::from_str("seedance_2p0").unwrap(), TaskModelType::Seedance2p0);
       assert_eq!(TaskModelType::from_str("seedance_2p0_fast").unwrap(), TaskModelType::Seedance2p0Fast);
-      assert_eq!(TaskModelType::from_str("sora_2").unwrap(), TaskModelType::Sora2);
-      assert_eq!(TaskModelType::from_str("sora_2_pro").unwrap(), TaskModelType::Sora2Pro);
       assert_eq!(TaskModelType::from_str("veo_2").unwrap(), TaskModelType::Veo2);
       assert_eq!(TaskModelType::from_str("veo_3").unwrap(), TaskModelType::Veo3);
       assert_eq!(TaskModelType::from_str("veo_3_fast").unwrap(), TaskModelType::Veo3Fast);
@@ -528,15 +488,12 @@ mod tests {
     #[test]
     fn all_variants() {
       let mut variants = TaskModelType::all_variants();
-      assert_eq!(variants.len(), 54);
+      assert_eq!(variants.len(), 49);
       // Image models
       assert_eq!(variants.pop_first(), Some(TaskModelType::Flux1Dev));
       assert_eq!(variants.pop_first(), Some(TaskModelType::Flux1Schnell));
-      assert_eq!(variants.pop_first(), Some(TaskModelType::FluxDevJuggernaut));
-      assert_eq!(variants.pop_first(), Some(TaskModelType::FluxPro1));
       assert_eq!(variants.pop_first(), Some(TaskModelType::FluxPro11));
       assert_eq!(variants.pop_first(), Some(TaskModelType::FluxPro11Ultra));
-      assert_eq!(variants.pop_first(), Some(TaskModelType::FluxProKontextMax));
       assert_eq!(variants.pop_first(), Some(TaskModelType::Gemini25Flash));
       assert_eq!(variants.pop_first(), Some(TaskModelType::NanoBanana));
       assert_eq!(variants.pop_first(), Some(TaskModelType::NanoBanana2));
@@ -572,8 +529,6 @@ mod tests {
       assert_eq!(variants.pop_first(), Some(TaskModelType::Seedance1p5Pro));
       assert_eq!(variants.pop_first(), Some(TaskModelType::Seedance2p0));
       assert_eq!(variants.pop_first(), Some(TaskModelType::Seedance2p0Fast));
-      assert_eq!(variants.pop_first(), Some(TaskModelType::Sora2));
-      assert_eq!(variants.pop_first(), Some(TaskModelType::Sora2Pro));
       assert_eq!(variants.pop_first(), Some(TaskModelType::Veo2));
       assert_eq!(variants.pop_first(), Some(TaskModelType::Veo3));
       assert_eq!(variants.pop_first(), Some(TaskModelType::Veo3Fast));

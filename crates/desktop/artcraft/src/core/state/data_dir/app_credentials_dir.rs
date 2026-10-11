@@ -29,22 +29,13 @@ impl AppCredentialsDir {
     self.path.join("grok_cookies.txt")
   }
   
-  pub fn get_sora_cookie_file_path(&self) -> PathBuf {
-    self.path.join("sora_cookies.txt")
-  }
 
-  pub fn get_sora_bearer_token_file_path(&self) -> PathBuf {
-    self.path.join("sora_bearer_token.txt")
-  }
 
-  #[deprecated(note="use the new sentinel token methods")]
-  pub fn get_sora_legacy_sentinel_file_path(&self) -> PathBuf {
-    self.path.join("sora_sentinel.txt")
-  }
 
-  pub fn get_sora_sentinel_token_file_path(&self) -> PathBuf {
-    self.path.join("sora_sentinel_token_store.json")
-  }
+
+
+
+
 
   pub fn get_storyteller_avt_cookie_file_path(&self) -> PathBuf {
     self.path.join("artcraft_avt.txt")
@@ -60,10 +51,6 @@ impl AppCredentialsDir {
 
   pub fn get_midjourney_credential_path(&self) -> PathBuf {
     self.path.join("midjourney_cookies.toml")
-  }
-
-  pub fn get_midjourney_state_path(&self) -> PathBuf {
-    self.path.join("midjourney_state.json")
   }
 
   pub fn get_worldlabs_state_path(&self) -> PathBuf {

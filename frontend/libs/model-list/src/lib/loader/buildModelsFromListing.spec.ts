@@ -1,17 +1,14 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from "vitest";
 import { GenerationProvider } from "@storyteller/api-enums";
-import {
-  buildImageModelsFromListing,
-  buildVideoModelsFromListing,
-} from "./buildModelsFromListing.js";
+import { buildImageModelsFromListing } from "./buildImageModelsFromListing.js";
+import { buildVideoModelsFromListing } from "./buildVideoModelsFromListing.js";
 import {
   resolveVideoDuration,
   resolveVideoGenerationCount,
   resolveVideoOutputFormat,
   videoGenerationCounts,
   videoDurationRange,
-  videoResolutionValue,
 } from "../classes/videoOptions.js";
 import { IMAGE_MODELS } from "../lists/ImageModels.js";
 import { CommonQuality } from "../classes/properties/CommonQuality.js";
@@ -19,6 +16,37 @@ import { VIDEO_MODELS } from "../lists/VideoModels.js";
 import { SPLAT_MODELS } from "../lists/SplatModels.js";
 
 describe("desktop catalog", () => {
+  it("excludes Sora even when an API listing still offers it", () => {
+    const models = buildVideoModelsFromListing(
+      VIDEO_MODELS,
+      [{ model: "sora_2" }, { model: "sora_2_pro" }, { model: "veo_3" }],
+      ["sora_2", "sora_2_pro"],
+    );
+    expect(models.some((model) => model.tauriId.startsWith("sora"))).toBe(false);
+    expect(models.some((model) => model.tauriId === "veo_3")).toBe(true);
+  });
+
+  it("does not offer image models that only had legacy routes", () => {
+    const retired = ["flux_pro_kontext_max", "flux_dev_juggernaut", "flux_pro_1"];
+    const ids = buildImageModelsFromListing(
+      IMAGE_MODELS, retired.map((model) => ({ model })), retired,
+    ).map((model) => model.tauriId);
+    expect(ids).not.toContain("flux_pro_kontext_max");
+    expect(ids).not.toContain("flux_dev_juggernaut");
+    expect(ids).not.toContain("flux_pro_1");
+  });
+
+  it("uses API capabilities without restoring absent options from the overlay", () => {
+    const source = VIDEO_MODELS.find((model) => model.resolutionOptions?.length)!;
+    const hydrated = buildVideoModelsFromListing([source], [{ model: source.tauriId }])[0];
+    expect(hydrated.resolutionOptions).toBeUndefined();
+    expect(hydrated.durationOptions).toBeUndefined();
+    expect(hydrated.startFrame).toBe(false);
+    expect(hydrated.sizeOptions).toEqual([]);
+    expect(hydrated.selectorName).toBe(source.selectorName);
+    expect(hydrated.getProviders()).toEqual(source.getProviders());
+  });
+
   it("offers enabled models without compiled overlay or provider entries", () => {
     const ids = [
       "seedance_2p5",
@@ -40,13 +68,13 @@ describe("desktop catalog", () => {
   });
 
   it("retains offered disabled entries and excludes the MiniMax admin variants", () => {
-    const ids = ["sora_2", "minimax_h3_turbo", "minimax_h3_ultra"];
+    const ids = ["veo_3", "minimax_h3_turbo", "minimax_h3_ultra"];
     const models = buildVideoModelsFromListing(
       [],
       ids.map((model) => ({ model, is_disabled: true })),
       ids,
     );
-    expect(models.map((model) => model.tauriId)).toEqual(["sora_2"]);
+    expect(models.map((model) => model.tauriId)).toEqual(["veo_3"]);
   });
 
   it("preserves future image options and leaves editor eligibility unchanged", () => {
@@ -78,22 +106,21 @@ describe("desktop catalog", () => {
     }
   });
 
-  it("keeps Sora and Marble models available through ArtCraft after hydration", () => {
+  it("keeps Veo and Marble models available through ArtCraft after hydration", () => {
     const images = buildImageModelsFromListing(IMAGE_MODELS, [
       { model: "gpt_image_1", image_refs_supported: true },
     ]);
     const videos = buildVideoModelsFromListing(VIDEO_MODELS, [
-      { model: "sora_2", duration_seconds_options: [4, 8, 12] },
+      { model: "veo_3", duration_seconds_options: [4, 8, 12] },
     ]);
     expect(images.find((model) => model.tauriId === "gpt_image_1")?.getProviders())
       .toEqual([GenerationProvider.Artcraft]);
-    expect(videos.find((model) => model.tauriId === "sora_2")?.getProviders())
+    expect(videos.find((model) => model.tauriId === "veo_3")?.getProviders())
       .toEqual([GenerationProvider.Artcraft]);
     expect(SPLAT_MODELS.map((model) => model.tauriId)).toEqual([
       "marble_0p1_mini", "marble_0p1_plus",
     ]);
     for (const model of [...images, ...videos, ...SPLAT_MODELS]) {
-      expect(model.getProviders()).not.toContain(GenerationProvider.Sora);
       expect(model.getProviders()).not.toContain(GenerationProvider.WorldLabs);
     }
     for (const model of SPLAT_MODELS) {
@@ -133,7 +160,7 @@ describe("API video options", () => {
       maxReferenceVideos: 5, maxVideoRefDuration: 15,
       maxReferenceAudios: 5, maxAudioRefDuration: 15,
       generateWithSound: true, maxPromptLength: 20000,
-      resolutionOptions: ["480p", "720p", "1080p"], defaultResolution: "720p",
+      resolutionOptions: ["four_eighty_p", "seven_twenty_p", "ten_eighty_p"], defaultResolution: "seven_twenty_p",
     });
     expect(videoDurationRange(model, true)).toEqual({ min: 2, max: 30 });
     expect(resolveVideoDuration(model, null, false)).toBe(5);
@@ -178,7 +205,7 @@ describe("API video options", () => {
     expect(resolveVideoDuration(model, 30, false)).toBe(30);
     expect(resolveVideoDuration(model, 30, true)).toBe(10);
     expect(model.bitrateOptions).toEqual(["normal", "high"]);
-    expect(model.resolutionOptions?.map(videoResolutionValue)).toEqual([
+    expect(model.resolutionOptions).toEqual([
       "four_k",
       "eight_k",
     ]);

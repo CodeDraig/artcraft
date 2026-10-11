@@ -39,31 +39,26 @@ export function serializeProjectDocument({
   };
 }
 
-// Accepts both the versioned document shape and legacy envelopes whose
-// `data` was a raw TProject (IndexedDB rows structured-cloned before the
-// document wrapper existed — their Date fields may still be real Dates).
 export function deserializeProjectDocument(
   data: unknown,
 ): { project: TProject; media: MediaAssetData[] } | null {
   if (!data || typeof data !== "object") return null;
-
-  if ("metadata" in data) {
-    return {
-      project: reviveProject(data as SerializedProject),
-      media: [],
-    };
+  const document = data as ProjectDocument;
+  if (
+    document.version !== 1 ||
+    !Array.isArray(document.media) ||
+    !document.project?.metadata ||
+    !Array.isArray(document.project.scenes) ||
+    !hasSerializedDates(document.project.metadata) ||
+    !document.project.scenes.every(hasSerializedDates)
+  ) {
+    return null;
   }
 
-  if ("project" in data) {
-    const document = data as ProjectDocument;
-    if (!document.project?.metadata) return null;
-    return {
-      project: reviveProject(document.project),
-      media: document.media ?? [],
-    };
-  }
-
-  return null;
+  return {
+    project: reviveProject(document.project),
+    media: document.media,
+  };
 }
 
 export function mediaAssetToData(asset: MediaAsset): MediaAssetData {
@@ -111,22 +106,26 @@ function stripAudioBuffers(track: AudioTrack): AudioTrack {
   };
 }
 
-function reviveProject(project: SerializedProject | TProject): TProject {
+function reviveProject(project: SerializedProject): TProject {
   return {
     ...project,
     metadata: {
       ...project.metadata,
-      createdAt: toDate(project.metadata.createdAt),
-      updatedAt: toDate(project.metadata.updatedAt),
+      createdAt: new Date(project.metadata.createdAt),
+      updatedAt: new Date(project.metadata.updatedAt),
     },
     scenes: project.scenes.map((scene) => ({
       ...scene,
-      createdAt: toDate(scene.createdAt),
-      updatedAt: toDate(scene.updatedAt),
+      createdAt: new Date(scene.createdAt),
+      updatedAt: new Date(scene.updatedAt),
     })),
   };
 }
 
-function toDate(value: string | Date): Date {
-  return value instanceof Date ? value : new Date(value);
+function hasSerializedDates(value: unknown): boolean {
+  if (!value || typeof value !== "object") return false;
+  const dates = value as { createdAt?: unknown; updatedAt?: unknown };
+  return [dates.createdAt, dates.updatedAt].every(
+    (date) => typeof date === "string" && Number.isFinite(Date.parse(date)),
+  );
 }

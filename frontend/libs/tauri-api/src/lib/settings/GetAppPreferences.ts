@@ -20,7 +20,6 @@ export interface AppPreferencesPayload {
   enqueue_failure_sound?: string,
   generation_success_sound?: string,
   generation_failure_sound?: string,
-  generation_enqueue_sound?: string,
 }
 
 export type PreferredDownloadDirectory = SystemDirectory | CustomDirectory;

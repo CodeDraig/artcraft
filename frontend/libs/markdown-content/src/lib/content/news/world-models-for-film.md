@@ -223,7 +223,7 @@ Image-to-image, 3D, and World Models make an entirely new form of Machinima poss
 ArtCraft is a crafting engine and is available in its entirety on [Github (please star us!)](https://github.com/storytold/artcraft), or try it today on [Mac or Windows](/download).
 
 You generate images and videos in app using a wide selection of models and providers
-such as Midjourney, Google, Sora, Grok, WorldLabs, and more - or you can bring your own keys!
+such as Midjourney, Google, Grok, WorldLabs, and more - or you can bring your own keys!
 
 Over the coming weeks, we'll be adding FAL, Replicate, and Google Gemini. Local GPU support and RunPod support 
 is also coming soon (subscribe to stay updated, or better yet, [join our Discord](https://discord.gg/artcraft)).

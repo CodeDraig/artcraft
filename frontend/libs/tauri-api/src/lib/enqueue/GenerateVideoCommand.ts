@@ -40,8 +40,6 @@ export interface GenerateVideoRequest {
   // Optional frontend state to return later.
   frontend_subscriber_id?: string;
 
-  // Optional. Orientation of the video for Sora 2.
-  sora_orientation?: "portrait" | "landscape";
 
   // Optional. Aspect Ratio for the video for Grok Video.
   grok_aspect_ratio?: "portrait" | "landscape" | "square";
@@ -78,7 +76,6 @@ interface RawGenerateVideoRequest {
   prompt?: string;
   frontend_caller?: string;
   frontend_subscriber_id?: string;
-  sora_orientation?: "portrait" | "landscape";
   grok_aspect_ratio?: "portrait" | "landscape" | "square";
   generate_audio?: boolean;
   aspect_ratio?: string;
@@ -134,9 +131,6 @@ export const GenerateVideoCommand = async (
     mutableRequest.frontend_subscriber_id = request.frontend_subscriber_id;
   }
 
-  if (request.sora_orientation) {
-    mutableRequest.sora_orientation = request.sora_orientation;
-  }
 
   if (request.grok_aspect_ratio) {
     mutableRequest.grok_aspect_ratio = request.grok_aspect_ratio;

@@ -405,7 +405,6 @@ export const Stage3DBody = ({
           );
           try {
             if (
-              item.mediaClass === "dimensional" ||
               item.mediaClass === "mesh" ||
               item.mediaClass === "splat"
             ) {

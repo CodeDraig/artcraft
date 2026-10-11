@@ -10,7 +10,7 @@ import {
   Trash2Icon,
 } from "lucide-react";
 import { twMerge } from "tailwind-merge";
-import { GalleryItem } from "./gallery-modal";
+import { GalleryItem } from "./GalleryItem";
 import { GalleryFolder } from "./GalleryDraggableItem";
 import { compareFolders } from "./folderUtils";
 
@@ -73,8 +73,7 @@ export const GalleryItemMenuItems: React.FC<GalleryItemMenuItemsProps> = ({
           <span>
             {item.mediaClass === "video"
               ? "View video"
-              : item.mediaClass === "dimensional" ||
-                  item.mediaClass === "mesh" ||
+              : item.mediaClass === "mesh" ||
                   item.mediaClass === "splat"
                 ? "View 3D"
                 : "View image"}

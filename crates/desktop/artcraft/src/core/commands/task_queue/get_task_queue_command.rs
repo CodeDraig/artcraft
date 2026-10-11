@@ -5,10 +5,8 @@ use crate::core::state::app_env_configs::app_env_configs::AppEnvConfigs;
 use crate::core::state::data_dir::app_data_root::AppDataRoot;
 use crate::core::state::provider_priority::{Provider, ProviderPriorityStore};
 use crate::core::state::task_database::TaskDatabase;
-use crate::services::sora::state::sora_task_queue::SoraTaskQueue;
 use crate::services::storyteller::state::storyteller_credential_manager::StorytellerCredentialManager;
 use chrono::{DateTime, Utc};
-use enums::common::generation_provider::GenerationProvider;
 use enums::tauri::tasks::task_model_type::TaskModelType;
 use enums::tauri::tasks::task_status::TaskStatus;
 use enums::tauri::tasks::task_type::TaskType;
@@ -37,7 +35,7 @@ pub struct TaskQueueItem {
   pub task_type: TaskType,
   pub model_type: Option<TaskModelType>,
 
-  pub provider: Option<GenerationProvider>,
+  pub provider: Option<String>,
   pub provider_job_id: Option<String>,
 
   /// If the item is done, these will be filled out.

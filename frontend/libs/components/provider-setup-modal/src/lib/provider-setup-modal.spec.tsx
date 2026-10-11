@@ -24,7 +24,7 @@ afterEach(() => {
   mocks.invoke.mockClear();
 });
 
-it.each([GenerationProvider.Sora, GenerationProvider.WorldLabs])(
+it.each([GenerationProvider.WorldLabs])(
   "ignores login events from the retired %s integration",
   async (provider) => {
     render(<ProviderSetupModal />);
